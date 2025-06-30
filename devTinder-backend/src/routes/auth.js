@@ -42,12 +42,12 @@ authRouter.post("/signup", async (req, res) => {
     });
     const savedUser = await user.save();
     const token = await savedUser.getjwt();
-
+    
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax", // or "none" if HTTPS and cross-domain
-      secure: false,   // set to true if using HTTPS in production
-      expires: new Date(Date.now() + 8 * 3600000),
+      sameSite: "None",  // for cross-site cookies
+      secure: true,      // required on HTTPS (Render)
+      expires: new Date(Date.now() + 8 * 3600000), // 8 hours
     });
 
     res
@@ -71,13 +71,14 @@ authRouter.post("/login", async (req, res) => {
     const isValidPassword = await user.validatePassword(password);
     if (isValidPassword) {
       const token = await user.getjwt();
-      
+
     res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: "lax", // or "none" if HTTPS and cross-domain
-      secure: false,   // set to true if using HTTPS in production
-      expires: new Date(Date.now() + 8 * 3600000),
+    httpOnly: true,
+    sameSite: "None",  // for cross-site cookies
+    secure: true,      // required on HTTPS (Render)
+    expires: new Date(Date.now() + 8 * 3600000), // 8 hours
     });
+
 
       res.status(200).json({ user });
     } else {
