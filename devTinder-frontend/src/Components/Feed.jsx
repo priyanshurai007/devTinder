@@ -8,36 +8,38 @@ import UserCard from "./UserCard";
 const Feed = () => {
   const dispatch = useDispatch();
   const feed = useSelector((store) => store.feed);
-  console.log(feed);
+
   const getFeed = async () => {
-    if (feed) return;
+    
     try {
-      const feed = await axios.get(BASE_URL + "/user/feed", {
+      const res = await axios.get(BASE_URL + "/user/feed", {
         withCredentials: true,
       });
-      dispatch(addFeed(feed.data));
-      // console.log(feed);
+      dispatch(addFeed(res.data)); // Assuming res.data is the array
     } catch (err) {
-      console.log(err);
+      console.log("Error fetching feed:", err);
     }
   };
+
   useEffect(() => {
-    getFeed();
-  });
+    if (!feed || feed.length === 0) {
+      getFeed();
+    }
+  }, []);
 
-  if (!feed) return;
+  if (!feed) return <div className="mt-10 text-center">Loading...</div>;
 
-  if (feed.length <= 0)
+  if (feed.length === 0)
     return (
-      <h1 className=" flex justify-center m-52 text-3xl">No more users!!!!</h1>
+      <h1 className="flex justify-center text-3xl m-52">No more users!!!!</h1>
     );
+
   return (
-    feed && (
-      <div className="flex flex-col items-center gap-4 my-5">
-        {feed && feed.map((user) => <UserCard key={user._id} user={user} />)}
-        {/* <UserCard user={feed[0]} /> */}
-      </div>
-    )
+    <div className="flex flex-col items-center gap-4 my-5">
+      {feed.map((user) => (
+        <UserCard key={user._id} user={user} />
+      ))}
+    </div>
   );
 };
 

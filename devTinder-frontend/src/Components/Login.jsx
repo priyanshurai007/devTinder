@@ -1,6 +1,6 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 import { addUser } from "../utils/userSlice";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
@@ -10,12 +10,47 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [isLoginFrom, setIsLoginForm] = useState(true);
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [about, setAbout] = useState("");
+  const [skills, setSkills] = useState("");
+  const [isLoginForm, setIsLoginForm] = useState(true);
   const [error, setError] = useState("");
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePassword = (pwd) =>
+    pwd.length >= 8 &&
+    /[A-Z]/.test(pwd) &&
+    /[a-z]/.test(pwd) &&
+    /[0-9]/.test(pwd) &&
+    /[^A-Za-z0-9]/.test(pwd);
+
+  const validateSignup = () => {
+    if (!firstName || firstName.length < 3) return "First name must be at least 3 characters.";
+    if (!lastName) return "Last name is required.";
+    if (!validateEmail(emailId)) return "Invalid email address.";
+    if (!validatePassword(password)) return "Password must be at least 8 characters, include upper/lowercase, number, and symbol.";
+    if (!age || isNaN(Number(age)) || Number(age) < 18) return "Age must be a number and at least 18.";
+    if (!["Male", "Female", "Others"].includes(gender)) return "Gender must be Male, Female, or Others.";
+    if (!about) return "About is required.";
+    const skillsArr = skills.split(",").map(s => s.trim()).filter(Boolean);
+    if (skillsArr.length === 0) return "At least one skill is required.";
+    return "";
+  };
+
   const handleLogin = async () => {
+    setError("");
+    if (!validateEmail(emailId)) {
+      setError("Invalid email address.");
+      return;
+    }
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
     try {
       const res = await axios.post(
         BASE_URL + "/login",
@@ -25,16 +60,21 @@ const Login = () => {
         },
         { withCredentials: true }
       );
-      // console.log(res.data.user)
+      
       dispatch(addUser(res.data.user));
-      return navigate("/");
+      navigate("/");
     } catch (err) {
-      setError(err.response.data);
-      console.log(err);
+      setError(err.response?.data || "Login failed");
     }
   };
 
   const handleSignUp = async () => {
+    setError("");
+    const validationError = validateSignup();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     try {
       const res = await axios.post(
         BASE_URL + "/signup",
@@ -43,93 +83,133 @@ const Login = () => {
           lastName,
           emailId,
           password,
+          age,
+          gender,
+          about,
+          skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
         },
         {
           withCredentials: true,
         }
       );
-      console.log(res);
+
       dispatch(addUser(res.data.data));
-      return navigate("/profile");
+      navigate("/profile");
     } catch (error) {
-      setError(error.response.data);
-      console.log(error);
+      setError(error.response?.data || "Signup failed");
     }
   };
 
   return (
     <div className="flex justify-center my-10">
-      <div className="card bg-base-300 w-96 shadow-xl">
+      <div className="shadow-xl card bg-base-300 w-96">
         <div className="card-body">
-          <h2 className="card-title justify-center">
-            {isLoginFrom ? "Login" : "Signup"}
+          <h2 className="justify-center card-title">
+            {isLoginForm ? "Login" : "Signup"}
           </h2>
-          <div>
-            {!isLoginFrom && (
-              <>
-                <label className="form-control w-full max-w-xs my-2">
-                  <div className="label">
-                    <span className="label-text">Firstname</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="input input-bordered w-full max-w-xs"
-                  />
-                </label>
-                <label className="form-control w-full max-w-xs my-2">
-                  <div className="label">
-                    <span className="label-text">Lastname</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="input input-bordered w-full max-w-xs"
-                  />
-                </label>
-              </>
-            )}
-            <label className="form-control w-full max-w-xs my-2">
-              <div className="label">
-                <span className="label-text">Email</span>
-              </div>
-              <input
-                type="text"
-                value={emailId}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input input-bordered w-full max-w-xs"
-              />
-            </label>
-            <label className="form-control w-full max-w-xs my-2">
-              <div className="label">
-                <span className="label-text">Password</span>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input input-bordered w-full max-w-xs"
-              />
-            </label>
-          </div>
-          <p className="text-red-500 text-center">{error}</p>
-          <div className="card-actions justify-center mt-2">
+
+          {!isLoginForm && (
+            <>
+              <label className="w-full max-w-xs my-2 form-control">
+                <span className="label-text">First Name</span>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full input input-bordered"
+                />
+              </label>
+              <label className="w-full max-w-xs my-2 form-control">
+                <span className="label-text">Last Name</span>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full input input-bordered"
+                />
+              </label>
+              <label className="w-full max-w-xs my-2 form-control">
+                <span className="label-text">Age</span>
+                <input
+                  type="number"
+                  min="18"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full input input-bordered"
+                />
+              </label>
+              <label className="w-full max-w-xs my-2 form-control">
+                <span className="label-text">Gender</span>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full select select-bordered"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Others">Others</option>
+                </select>
+              </label>
+              <label className="w-full max-w-xs my-2 form-control">
+                <span className="label-text">About</span>
+                <textarea
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value)}
+                  className="w-full textarea textarea-bordered"
+                  placeholder="Tell us about yourself"
+                ></textarea>
+              </label>
+              <label className="w-full max-w-xs my-2 form-control">
+                <span className="label-text">Skills (comma-separated)</span>
+                <input
+                  type="text"
+                  value={skills}
+                  onChange={(e) => setSkills(e.target.value)}
+                  className="w-full input input-bordered"
+                />
+              </label>
+            </>
+          )}
+
+          {/* Email and password fields for both login/signup */}
+          <label className="w-full max-w-xs my-2 form-control">
+            <span className="label-text">Email</span>
+            <input
+              type="email"
+              value={emailId}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full input input-bordered"
+            />
+          </label>
+          <label className="w-full max-w-xs my-2 form-control">
+            <span className="label-text">Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full input input-bordered"
+            />
+          </label>
+
+          <p className="text-center text-red-500">{error}</p>
+
+          <div className="justify-center mt-2 card-actions">
             <button
               className="btn btn-primary"
-              onClick={isLoginFrom ? handleLogin : handleSignUp}
+              onClick={isLoginForm ? handleLogin : handleSignUp}
             >
-              {isLoginFrom ? "Login" : "Signup"}
+              {isLoginForm ? "Login" : "Signup"}
             </button>
           </div>
+
           <p
-            className=" text-center cursor-pointer py-2"
-            onClick={() => setIsLoginForm((value) => !value)}
+            className="py-2 text-center cursor-pointer"
+            onClick={() => setIsLoginForm((val) => !val)}
           >
-            {isLoginFrom
-              ? "New user ? signup here"
-              : "Existing User ? Login here"}
+            {isLoginForm
+              ? "New user? Signup here"
+              : "Existing user? Login here"}
           </p>
         </div>
       </div>

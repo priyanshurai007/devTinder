@@ -41,15 +41,15 @@ const Requests = () => {
   if (requests.length == 0)
     return (
       <>
-        <h1 className="flex justify-center text-2xl my-10 text-green-300">
+        <h1 className="flex justify-center my-10 text-2xl text-green-300">
           No Requests found
         </h1>
       </>
     );
 
   return (
-    <div className=" text-center my-10">
-      <h1 className="font-bold text-3xl text-pink-400 p-4">
+    <div className="my-10 text-center ">
+      <h1 className="p-4 text-3xl font-bold text-pink-400">
         Requests ({requests.length})
       </h1>
       {requests.map((request) => {
@@ -59,17 +59,17 @@ const Requests = () => {
         return (
           <div
             key={_id}
-            className="flex justify-between items-center m-2 p-2  rounded-lg bg-base-300 w-2/3 mx-auto"
+            className="flex items-center justify-between w-2/3 p-2 m-2 mx-auto rounded-lg bg-base-300"
           >
             <div>
               <img
                 alt="photo"
-                className="w-14 h-14 rounded-full object-contain"
+                className="object-contain rounded-full w-14 h-14"
                 src={photoURL}
               />
             </div>
-            <div className="text-left m-4 p-4 ">
-              <h2 className="font-bold text-xl">
+            <div className="p-4 m-4 text-left ">
+              <h2 className="text-xl font-bold">
                 {firstName + " " + lastName}
               </h2>
               {age && gender && <p>{age + " " + gender}</p>}
@@ -77,13 +77,13 @@ const Requests = () => {
             </div>
             <div className="">
               <button
-                className="btn btn-secondary mx-2"
+                className="mx-2 btn btn-secondary"
                 onClick={() => reviewRequest("accepted", request._id)}
               >
                 Accept
               </button>
               <button
-                className="btn btn-primary mx-2"
+                className="mx-2 btn btn-primary"
                 onClick={() => reviewRequest("rejected", request._id)}
               >
                 Reject

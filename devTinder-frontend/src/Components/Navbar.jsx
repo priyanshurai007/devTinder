@@ -22,17 +22,17 @@ const Navbar = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full bg-neutral text-white shadow-lg z-50">
-      <div className="navbar px-5 flex justify-between">
+    <div className="fixed top-0 left-0 z-50 w-full text-white shadow-lg bg-neutral">
+      <div className="flex justify-between px-5 navbar">
         {/* Logo */}
-        <Link to="/" className="text-2xl font-bold text-green-400 hover:text-green-300 transition">
+        <Link to="/" className="text-2xl font-bold text-green-400 transition hover:text-green-300">
           DevTinder 🔥
         </Link>
 
         {user && (
           <div className="flex items-center gap-4">
             {/* Welcome Message */}
-            <div className="bg-gradient-to-r from-gray-800 to-gray-700 text-green-400 font-semibold px-4 py-2 rounded-xl shadow-md text-center">
+            <div className="px-4 py-2 font-semibold text-center text-green-400 shadow-md bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl">
               👋 Welcome, {user.firstName}!
             </div>
 
@@ -41,35 +41,35 @@ const Navbar = () => {
               <div
                 tabIndex={0}
                 role="button"
-                className="btn btn-ghost btn-circle avatar hover:bg-gray-700 transition"
+                className="transition btn btn-ghost btn-circle avatar hover:bg-gray-700"
               >
-                <div className="w-10 rounded-full border border-gray-500">
+                <div className="w-10 border border-gray-500 rounded-full">
                   <img alt="User Photo" src={user.photoURL} />
                 </div>
               </div>
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content bg-gray-900 text-gray-300 border border-gray-700 rounded-md shadow-lg mt-3 w-52 p-2 right-0 z-50"
+                className="right-0 z-50 p-2 mt-3 text-gray-300 bg-gray-900 border border-gray-700 rounded-md shadow-lg menu menu-sm dropdown-content w-52"
               >
                 <li>
-                  <Link to="/profile" className="justify-between hover:bg-gray-800 rounded-md p-2">
+                  <Link to="/profile" className="justify-between p-2 rounded-md hover:bg-gray-800">
                     Profile <span className="badge badge-success">New</span>
                   </Link>
                 </li>
                 <li>
-                  <Link to="/connections" className="justify-between hover:bg-gray-800 rounded-md p-2">
+                  <Link to="/connections" className="justify-between p-2 rounded-md hover:bg-gray-800">
                     Connections <span className="badge badge-error">💗</span>
                   </Link>
                 </li>
                 <li>
-                  <Link to="/requests" className="justify-between hover:bg-gray-800 rounded-md p-2">
+                  <Link to="/requests" className="justify-between p-2 rounded-md hover:bg-gray-800">
                     Requests <span className="badge badge-warning">👁️</span>
                   </Link>
                 </li>
                 <li>
                   <button
                     onClick={handleLogout}
-                    className="text-red-400 hover:text-red-300 hover:bg-gray-800 w-full p-2 rounded-md"
+                    className="w-full p-2 text-red-400 rounded-md hover:text-red-300 hover:bg-gray-800"
                   >
                     Logout
                   </button>
