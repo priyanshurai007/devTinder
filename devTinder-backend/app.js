@@ -1,23 +1,29 @@
 const express = require("express");
 const connectDB = require("./src/Config/database");
 const cookieParser = require("cookie-parser");
-const app = express();
 const dotenv = require("dotenv");
-require('dotenv').config(); // ✅ this loads .env into process.env
 const cors = require("cors");
 
+dotenv.config(); // ✅ Load env variables
 
+const app = express();
+
+// ✅ Recommended: Set frontend URL as a variable
+const FRONTEND_URL = "https://devtinder-vqbx.onrender.com";
+
+// ✅ CORS setup
 app.use(
   cors({
-    origin: "https://devtinder-vqbx.onrender.com",
-    credentials: true,
+    origin: FRONTEND_URL,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true, // ✅ Allow cookies, headers, etc.
   })
 );
 
 app.use(express.json());
 app.use(cookieParser());
 
-//routes
+// ✅ Routes
 const authRouter = require("./src/routes/auth");
 const profileRouter = require("./src/routes/profile");
 const requestRouter = require("./src/routes/request");
@@ -28,13 +34,13 @@ app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
 
-//database connect before server
+// ✅ Connect DB and Start Server
 connectDB().then(() => {
   try {
-    app.listen(process.env.PORT, () => {
-      console.log(`Server running on ` + process.env.PORT);
+    app.listen(process.env.PORT || 3000, () => {
+      console.log(`Server running on ${process.env.PORT}`);
     });
   } catch (error) {
-    console.log(error);
+    console.error("Server Error:", error.message);
   }
 });
