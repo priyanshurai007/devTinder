@@ -67,21 +67,3 @@ DevTinder allows users to:
 
 ---
 
-## 📂 Folder Structure
-
-devTinder/
-├── devTinder-frontend/
-│ ├── public/
-│ └── src/
-│ ├── components/
-│ ├── redux/
-│ ├── utils/
-│ └── App.jsx
-├── devTinder-backend/
-│ ├── src/
-│ │ ├── routes/
-│ │ ├── models/
-│ │ ├── middlewares/
-│ │ └── Config/
-│ ├── app.js
-│ └── .env
