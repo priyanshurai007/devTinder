@@ -42,9 +42,14 @@ authRouter.post("/signup", async (req, res) => {
     });
     const savedUser = await user.save();
     const token = await savedUser.getjwt();
+
     res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax", // or "none" if HTTPS and cross-domain
+      secure: false,   // set to true if using HTTPS in production
       expires: new Date(Date.now() + 8 * 3600000),
     });
+
     res
       .status(200)
       .json({ message: "User added successfully", data: savedUser });
@@ -66,9 +71,14 @@ authRouter.post("/login", async (req, res) => {
     const isValidPassword = await user.validatePassword(password);
     if (isValidPassword) {
       const token = await user.getjwt();
-      res.cookie("token", token, {
-        expires: new Date(Date.now() + 8 * 3600000),
-      });
+      
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax", // or "none" if HTTPS and cross-domain
+      secure: false,   // set to true if using HTTPS in production
+      expires: new Date(Date.now() + 8 * 3600000),
+    });
+
       res.status(200).json({ user });
     } else {
       throw new Error("Invalid Vredentials");

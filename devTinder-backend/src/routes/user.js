@@ -83,4 +83,9 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
     res.status(400).send("ERROR: " + error.message);
   }
 });
+
+userRouter.get("/user/test", (req, res) => {
+  res.send("✅ User route working");
+});
+
 module.exports = userRouter;

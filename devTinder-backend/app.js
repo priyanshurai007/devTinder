@@ -3,8 +3,9 @@ const connectDB = require("./src/Config/database");
 const cookieParser = require("cookie-parser");
 const app = express();
 const dotenv = require("dotenv");
-dotenv.config({});
+require('dotenv').config(); // ✅ this loads .env into process.env
 const cors = require("cors");
+
 
 app.use(
   cors({
