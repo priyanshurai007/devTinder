@@ -25,8 +25,8 @@ const Navbar = () => {
     <div className="fixed top-0 left-0 z-50 w-full text-white shadow-lg bg-neutral">
       <div className="flex justify-between px-5 navbar">
         {/* Logo */}
-        <Link to="/" className="text-2xl font-bold text-green-400 transition hover:text-green-300">
-          DevTinder 🔥
+        <Link to="/" className="text-2xl font-bold text-green-300 transition hover:text-white-200">
+          DevTinder 🧑‍💻
         </Link>
 
         {user && (
