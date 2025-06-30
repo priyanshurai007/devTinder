@@ -9,9 +9,6 @@ This repository contains the **backend** of DevTinder, built with **Node.js, Exp
 
 ---
 
-## 📖 My Node.js Learning Repository
-I learned and maintained all my Node.js knowledge in one place:
-[**Namsate Nodejs**](https://github.com/akshadjaiswal/Namaste-Nodejs)
 
 
 ## 🛠️ Tech Stack
@@ -120,7 +117,7 @@ I learned and maintained all my Node.js knowledge in one place:
 
 ### **1️⃣ Clone the Repository**
 ```bash
-git clone https://github.com/akshadjaiswal/devTinder-backend.git
+git clone 
 cd devTinder-backend
 ```
 
