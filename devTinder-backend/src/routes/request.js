@@ -3,6 +3,8 @@ const requestRouter = express.Router();
 const { userAuth } = require("../Middlewares/auth");
 const { ConnectionRequestModel } = require("../Models/connectionRequest");
 const User = require("../Models/user");
+const { findOrCreateChatRoom } = require("../services/chatService");
+const ChatRoom = require("../Models/chatRoom"); // if you need it elsewhere
 
 requestRouter.post(
   "/request/send/:status/:toUserId",
@@ -94,6 +96,15 @@ requestRouter.post(
 
       connectionRequest.status = status;
       const data = await connectionRequest.save();
+
+      // If accepted, create/find chat room
+      if (status === "accepted") {
+        const room = await findOrCreateChatRoom(
+          connectionRequest.fromUserId,
+          connectionRequest.toUserId
+        );
+        console.log("ChatRoom ready:", room._id.toString());
+      }
 
       res.status(200).json({
         message: "Connection request " + status,
