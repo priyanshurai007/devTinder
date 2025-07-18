@@ -4,6 +4,8 @@ import { useDispatch } from "react-redux";
 import { addUser } from "../utils/userSlice";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
+import { socket } from "../utils/socket";
+
 
 const Login = () => {
   const [emailId, setEmail] = useState("");
@@ -60,7 +62,7 @@ const Login = () => {
         },
         { withCredentials: true }
       );
-      
+      socket.connect();
       dispatch(addUser(res.data.user));
       navigate("/");
     } catch (err) {

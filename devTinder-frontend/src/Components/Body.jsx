@@ -6,6 +6,8 @@ import { BASE_URL } from "../utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../utils/userSlice";
 import { useEffect } from "react";
+import { socket } from "../utils/socket";
+
 
 const Body = () => {
   const dispatch = useDispatch();
@@ -18,6 +20,7 @@ const Body = () => {
         withCredentials: true,
       });
       dispatch(addUser(response.data));
+      socket.connect();
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/login");
@@ -37,6 +40,13 @@ const Body = () => {
   return (
     <div>
       <Navbar />
+      <nav>
+        {user && (
+          <a href="/chat" className="ml-4">
+            Chat
+          </a>
+        )}
+      </nav>
       <div className="pt-20">
         <Outlet />
       </div>
