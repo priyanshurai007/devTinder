@@ -3,44 +3,64 @@ const connectDB = require("./src/Config/database");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 const cors = require("cors");
-
-dotenv.config(); // ✅ Load env variables
+dotenv.config();
 
 const app = express();
 
-// ✅ Recommended: Set frontend URL as a variable
-const FRONTEND_URL = "https://devtinder-vqbx.onrender.com";
+/*
+  Allow both local dev and deployed frontend.
+  If you want to restrict strictly in prod, set FRONTEND_URL in .env and use that only.
+*/
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://devtinder-vqbx.onrender.com",
+].filter(Boolean); // avoid undefineds
 
-// ✅ CORS setup
 app.use(
   cors({
-    origin: FRONTEND_URL,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true, // ✅ Allow cookies, headers, etc.
+    origin: function (origin, callback) {
+      // allow REST tools w/out origin (Postman, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS blocked from origin: " + origin), false);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
+    exposedHeaders: ["Content-Length"],
   })
 );
 
-app.use(express.json());
+// Parse JSON + cookies
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
-// ✅ Routes
+// ---- Routes ----
 const authRouter = require("./src/routes/auth");
 const profileRouter = require("./src/routes/profile");
 const requestRouter = require("./src/routes/request");
 const userRouter = require("./src/routes/user");
+const uploadRouter = require("./src/routes/upload"); // <-- NEW
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
+app.use("/", uploadRouter); // <-- NEW
 
-// ✅ Connect DB and Start Server
+// Health check (nice for Render)
+app.get("/health", (req, res) => res.send("ok"));
+
+// ---- Start Server AFTER DB ----
 connectDB().then(() => {
-  try {
-    app.listen(process.env.PORT || 3000, () => {
-      console.log(`Server running on ${process.env.PORT}`);
-    });
-  } catch (error) {
-    console.error("Server Error:", error.message);
-  }
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server running on ${port}`);
+  });
 });

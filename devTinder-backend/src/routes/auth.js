@@ -40,7 +40,7 @@ authRouter.post("/signup", async (req, res) => {
       about,
       skills,
     });
-    const savedUser = await user.save();
+    const savedUser = await user.save(); //save and return the saved document
     const token = await savedUser.getjwt();
     
     res.cookie("token", token, {
