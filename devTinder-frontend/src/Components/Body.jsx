@@ -46,3 +46,30 @@ const Body = () => {
 };
 
 export default Body;
+
+//notes.
+
+/*
+📘 Body.jsx Revision Notes:
+
+1. Acts as the main layout wrapper — includes Navbar, Outlet (page), and Footer.
+
+2. fetchUser():
+   - Calls backend API to get current user profile.
+   - If unauthorized, redirects to /login.
+   - Dispatches user data to Redux store using addUser.
+
+3. useEffect():
+   - Runs fetchUser on initial mount if user not already in Redux.
+
+4. Outlet:
+   - Renders nested route components dynamically based on URL.
+   - Example: /profile → <Profile />, /feed → <Feed />
+
+5. useSelector:
+   - Reads user data from Redux store (global state).
+
+6. useNavigate:
+   - Redirects user programmatically if needed.
+*/
+

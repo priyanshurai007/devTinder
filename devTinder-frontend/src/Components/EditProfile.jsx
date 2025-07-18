@@ -16,10 +16,50 @@ const EditProfile = ({ user }) => {
   const [skills, setSkills] = useState(user.skills?.join(",") || "");
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
+  const [uploading, setUploading] = useState(false);      // NEW
+  const [uploadError, setUploadError] = useState("");     // NEW
+
   const dispatch = useDispatch();
 
+  // ---------------------------
+  // Photo Upload Handler (NEW)
+  // ---------------------------
+const handlePhotoUpload = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setUploadError("");
+  setUploading(true);
+
+  try {
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    const res = await axios.post(`${BASE_URL}/profile/photo`, formData, {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (res.data?.photoURL) {
+      setPhotoURL(res.data.photoURL); // ✅ Local preview update
+      dispatch(addUser(res.data.user)); // ✅ Update Redux immediately for Navbar
+    } else {
+      setUploadError("Upload succeeded but no URL returned.");
+    }
+  } catch (err) {
+    console.error("Upload failed:", err);
+    setUploadError(err?.response?.data || "Image upload failed.");
+  } finally {
+    setUploading(false);
+    e.target.value = "";
+  }
+};
+
+
+  // ---------------------------
+  // Save Profile (existing)
+  // ---------------------------
   const saveProfile = async () => {
-    
     setError("");
     try {
       const res = await axios.post(
@@ -28,11 +68,11 @@ const EditProfile = ({ user }) => {
           firstName,
           lastName,
           emailId,
-          photoURL,
+          photoURL, // may have come from upload
           age,
           gender,
           about,
-          skills: skills.split(",").map((s) => s.trim()),
+          skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
         },
         { withCredentials: true }
       );
@@ -45,9 +85,12 @@ const EditProfile = ({ user }) => {
     }
   };
 
+  // ----------------------------------
+  // Render
+  // ----------------------------------
   return (
     <>
-      <div className="flex justify-center my-10">
+      <div className="flex flex-wrap justify-center gap-10 my-10">
         <div className="shadow-xl card bg-base-300 w-96">
           <div className="card-body">
             <h2 className="justify-center card-title">Edit Profile</h2>
@@ -93,16 +136,36 @@ const EditProfile = ({ user }) => {
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 className="w-full max-w-xs input input-bordered"
+                min="18"
               />
             </label>
 
-            {/* PhotoURL */}
+            {/* Upload Photo (NEW) */}
             <label className="w-full max-w-xs my-2 form-control">
-              <div className="label"><span className="label-text">Photo URL</span></div>
+              <div className="label"><span className="label-text">Upload Profile Photo</span></div>
+              <input
+                type="file"
+                accept="image/*"
+                capture="user" // mobile selfie cam hint
+                onChange={handlePhotoUpload}
+                className="w-full max-w-xs file-input file-input-bordered"
+              />
+            </label>
+            {uploading && (
+              <p className="mt-1 text-sm text-info">Uploading photo...</p>
+            )}
+            {uploadError && (
+              <p className="mt-1 text-sm text-error">{uploadError}</p>
+            )}
+
+            {/* PhotoURL manual override */}
+            <label className="w-full max-w-xs my-2 form-control">
+              <div className="label"><span className="label-text">Photo URL (optional)</span></div>
               <input
                 type="text"
                 value={photoURL}
                 onChange={(e) => setPhotoURL(e.target.value)}
+                placeholder="Paste image URL (optional)"
                 className="w-full max-w-xs input input-bordered"
               />
             </label>
@@ -144,17 +207,20 @@ const EditProfile = ({ user }) => {
               ></textarea>
             </label>
 
+            {/* Error + Save */}
             <p className="text-center text-red-500">{error}</p>
             <div className="justify-center mt-2 card-actions">
-              <button className="btn btn-primary" onClick={saveProfile}>
-                Save Profile
+              <button className="btn btn-primary" onClick={saveProfile} disabled={uploading}>
+                {uploading ? "Please wait..." : "Save Profile"}
               </button>
             </div>
           </div>
         </div>
 
+        {/* Preview Card */}
         <UserCard
           user={{
+            _id: user._id,
             firstName,
             lastName,
             emailId,
@@ -162,7 +228,7 @@ const EditProfile = ({ user }) => {
             about,
             age,
             gender,
-            skills: skills.split(",").map((s) => s.trim()),
+            skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
           }}
         />
       </div>
