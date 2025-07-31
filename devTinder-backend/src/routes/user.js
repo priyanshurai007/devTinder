@@ -4,6 +4,10 @@ const { userAuth } = require("../Middlewares/auth");
 const { ConnectionRequestModel } = require("../Models/connectionRequest");
 const User = require("../Models/user");
 
+const getEmbedding = require("../utils/getEmbedding");
+const cosineSimilarity = require("../utils/cosineSimilarity");
+
+
 const USER_SAFE_DATA = "firstName lastName photoURL about age gender skills";
 
 userRouter.get("/user/requests/recieved", userAuth, async (req, res) => {
@@ -49,6 +53,9 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
   }
 });
 
+
+//smart-feed using cosine similarity
+// This endpoint provides a smart feed of users based on cosine similarity of skills and about text
 userRouter.get("/user/feed", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
@@ -62,27 +69,53 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
     }).select("fromUserId toUserId");
 
-    const hideUsersFromFeed = new Set();
+    const hideUsersFromFeed = new Set([loggedInUser._id.toString()]);
     connectionRequest.forEach((req) => {
       hideUsersFromFeed.add(req.fromUserId.toString());
       hideUsersFromFeed.add(req.toUserId.toString());
     });
 
-    const users = await User.find({
-      $and: [
-        { _id: { $nin: Array.from(hideUsersFromFeed) } },
-        { _id: { $ne: loggedInUser._id } },
-      ],
-    })
-      .select(USER_SAFE_DATA)
-      .skip(skip)
-      .limit(limit);
+    const inputSkills = Array.isArray(loggedInUser.skills) ? loggedInUser.skills.join(" ") : "";
+    const inputAbout = loggedInUser.about || "";
+    const inputText = `${inputSkills} ${inputAbout}`.trim();
+    if (!inputText) return res.status(400).send("Incomplete profile");
 
-    res.send(users);
+    const myVector = await getEmbedding(inputText);
+    if (!myVector) return res.status(500).send("Embedding failed");
+
+    const users = await User.find({
+      _id: { $nin: Array.from(hideUsersFromFeed) },
+    }).select("firstName lastName photoURL about age gender skills");
+
+    const results = [];
+
+    for (const user of users) {
+      const userSkills = Array.isArray(user.skills) ? user.skills.join(" ") : "";
+      const userAbout = user.about || "";
+      const profileText = `${userSkills} ${userAbout}`.trim();
+
+      if (!profileText) continue;
+
+      const userVector = await getEmbedding(profileText);
+      if (!userVector) continue;
+
+      const similarity = cosineSimilarity(myVector, userVector);
+      results.push({ user, similarity });
+    }
+
+    // Sort by similarity
+    results.sort((a, b) => b.similarity - a.similarity);
+
+    // Paginate after sorting
+    const paginated = results.slice(skip, skip + limit).map(r => r.user);
+
+    res.status(200).json(paginated);
   } catch (error) {
-    res.status(400).send("ERROR: " + error.message);
+    console.error("🔥 Smart Feed error:", error.message);
+    res.status(500).send("ERROR: " + error.message);
   }
 });
+
 
 userRouter.get("/user/test", (req, res) => {
   res.send("✅ User route working");
