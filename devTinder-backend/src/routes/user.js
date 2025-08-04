@@ -148,6 +148,7 @@ userRouter.get("/user/smart-feed", userAuth, async (req, res) => {
 
     console.log(`✅ Smart feed generated for ${loggedInUser.emailId}, top:`, topUsers.map(u => u.firstName));
     res.json(topUsers);
+    
   } catch (err) {
     console.error("🔥 Smart feed error:", err.message, err.stack);
     res.status(500).send("Server error");

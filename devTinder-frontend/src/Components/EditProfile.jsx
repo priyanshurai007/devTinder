@@ -228,7 +228,7 @@ const handlePhotoUpload = async (e) => {
             about,
             age,
             gender,
-            skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
+            skills: [...new Set(skills.split(",").map((s) => s.trim()).filter(Boolean))],
           }}
         />
       </div>

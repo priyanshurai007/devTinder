@@ -1,14 +1,18 @@
 import axios from "axios";
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { BASE_URL } from "../utils/constants";
-import { useDispatch } from "react-redux";
 import { removeUserFromFeed } from "../utils/feedSlice";
 import ReferralModal from "./ReferralModal";
 
 const UserCard = ({ user }) => {
   const dispatch = useDispatch();
-  const { _id, firstName, lastName, age, gender, about, photoURL, skills } = user;
+  const currentUserId = useSelector((store) => store.user?._id);
   const [showReferralModal, setShowReferralModal] = useState(false);
+
+  const { _id, firstName, lastName, age, gender, about, photoURL, skills = [] } = user;
+
+  const isSelf = currentUserId === _id;
 
   const handleSendRequest = async (status, userId) => {
     try {
@@ -17,7 +21,11 @@ const UserCard = ({ user }) => {
         {},
         { withCredentials: true }
       );
-      dispatch(removeUserFromFeed(userId));
+
+      // Only remove from feed if user is ignored
+      if (status === "ignored") {
+        dispatch(removeUserFromFeed(userId));
+      }
     } catch (error) {
       console.error("Request failed:", error?.response?.data || error.message);
     }
@@ -36,7 +44,8 @@ const UserCard = ({ user }) => {
         <h2 className="card-title">{firstName + " " + lastName}</h2>
         {age && gender && <p>{`${age}, ${gender}`}</p>}
         {about && <p>{about}</p>}
-        {skills && skills.length > 0 && (
+
+        {skills.length > 0 && (
           <div>
             <h3 className="font-semibold">Skills:</h3>
             <div className="flex flex-wrap gap-2 mt-1">
@@ -51,6 +60,7 @@ const UserCard = ({ user }) => {
             </div>
           </div>
         )}
+
         <div className="justify-center my-4 card-actions">
           <button
             className="btn btn-accent"
@@ -58,18 +68,23 @@ const UserCard = ({ user }) => {
           >
             Ignore
           </button>
+
           <button
             className="btn btn-secondary"
             onClick={() => handleSendRequest("intrested", _id)}
           >
             Interested
           </button>
-          <button
-            className="btn btn-success"
-            onClick={() => setShowReferralModal(true)}
-          >
-            Request Referral
-          </button>
+
+          {/* Block referral button if it's the user's own profile */}
+          {!isSelf && (
+            <button
+              className="btn btn-success"
+              onClick={() => setShowReferralModal(true)}
+            >
+              Request Referral
+            </button>
+          )}
         </div>
       </div>
 
