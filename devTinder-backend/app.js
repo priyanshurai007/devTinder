@@ -51,7 +51,7 @@ const requestRouter = require("./src/routes/request");
 const userRouter = require("./src/routes/user");
 const uploadRouter = require("./src/routes/upload"); // <-- NEW
 const chatRouter = require("./src/routes/chat"); // <-- New
-
+const referralRouter = require("./src/routes/referral");
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
@@ -59,6 +59,8 @@ app.use("/", requestRouter);
 app.use("/", userRouter);
 app.use("/", uploadRouter); // <-- NEW
 app.use("/", chatRouter);// <-- New
+app.use("/", referralRouter); //<-- New
+
 
 // Health check (nice for Render)
 app.get("/health", (req, res) => res.send("ok"));

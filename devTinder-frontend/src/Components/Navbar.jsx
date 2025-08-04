@@ -74,6 +74,12 @@ const Navbar = () => {
                     Logout
                   </button>
                 </li>
+                <li>
+                <Link to="/referrals" className="justify-between p-2 rounded-md hover:bg-gray-800">
+                  Referrals <span className="badge badge-info">🔥</span>
+                </Link>
+                </li>
+
               </ul>
             </div>
           </div>

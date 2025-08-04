@@ -8,6 +8,7 @@ import Feed from "./Components/Feed";
 import Connections from "./Components/Connections";
 import Requests from "./Components/Requests";
 import ChatPage from "./Components/ChatPage";
+import MyReferrals from "./pages/MyReferrals";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
               <Route path="/connections" element={<Connections />} />
               <Route path="/requests" element={<Requests />} />
               <Route path="/chat" element={<ChatPage />} />
+              <Route path="/referrals" element={<MyReferrals />} />
             </Route>
           </Routes>
         </BrowserRouter>

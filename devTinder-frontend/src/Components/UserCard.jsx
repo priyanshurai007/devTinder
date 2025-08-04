@@ -1,13 +1,14 @@
 import axios from "axios";
-import React from "react";
+import React, { useState } from "react";
 import { BASE_URL } from "../utils/constants";
 import { useDispatch } from "react-redux";
 import { removeUserFromFeed } from "../utils/feedSlice";
+import ReferralModal from "./ReferralModal";
 
 const UserCard = ({ user }) => {
-  
   const dispatch = useDispatch();
   const { _id, firstName, lastName, age, gender, about, photoURL, skills } = user;
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   const handleSendRequest = async (status, userId) => {
     try {
@@ -63,8 +64,22 @@ const UserCard = ({ user }) => {
           >
             Interested
           </button>
+          <button
+            className="btn btn-success"
+            onClick={() => setShowReferralModal(true)}
+          >
+            Request Referral
+          </button>
         </div>
       </div>
+
+      {/* Referral Modal */}
+      {showReferralModal && (
+        <ReferralModal
+          toUser={user}
+          onClose={() => setShowReferralModal(false)}
+        />
+      )}
     </div>
   );
 };

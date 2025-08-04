@@ -12,6 +12,7 @@ async function getEmbedding(text) {
       return res.data.embedding;
     } else {
       console.warn("⚠️ Invalid embedding format:", res.data);
+      
       return null;
     }
   } catch (err) {
