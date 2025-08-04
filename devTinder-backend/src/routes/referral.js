@@ -3,6 +3,7 @@ const referralRouter = express.Router();
 const { userAuth } = require("../Middlewares/auth");
 const ReferralRequest = require("../Models/referralRequest");
 const User = require("../Models/user");
+const { generateReferralMessage } = require("../utils/messageGenerator"); 
 
 // Send Referral Request
 referralRouter.post("/referral/send", userAuth, async (req, res) => {
@@ -63,6 +64,22 @@ referralRouter.post("/referral/review/:requestId/:action", userAuth, async (req,
     res.json({ message: `Referral ${action}`, referral });
   } catch (err) {
     res.status(400).send("ERROR: " + err.message);
+  }
+});
+
+referralRouter.post("/referral/generate-message", userAuth, async (req, res) => {
+  const { company, role } = req.body;
+  const { firstName, skills, about } = req.user;
+
+  if (!company || !role || !about || !skills) {
+    return res.status(400).send("Missing info for message generation");
+  }
+
+  try {
+    const message = generateReferralMessage({ firstName, skills, about, company, role });
+    res.json({ message });
+  } catch (err) {
+    res.status(500).send("Message generation failed");
   }
 });
 
