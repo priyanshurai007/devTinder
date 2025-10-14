@@ -2,21 +2,27 @@ const axios = require("axios");
 
 async function getEmbedding(text) {
   try {
+    // 🔹 Hugging Face Spaces (Gradio) endpoint
     const res = await axios.post(
-      "https://embedding-api-smart-feed.onrender.com/embed",
-      { text }
+      "https://priyanshurai439-smartfeed.hf.space/run/predict",
+      { data: [text] }, // 👈 required shape
+      { headers: { "Content-Type": "application/json" } }
     );
 
+    // 🧠 Inspect full response
+    console.log("🧠 HF Embedding API response:", res.data);
 
-    // Debug log full response
-    console.log("🧠 Embedding API response:", res.data);
+    // 🔹 Gradio returns the embedding inside data[0].embedding
+    const embedding =
+      res.data?.data?.[0]?.embedding ||
+      res.data?.data?.[0] || // sometimes plain array
+      null;
 
-    if (res.data && Array.isArray(res.data.embedding)) {
+    if (Array.isArray(embedding)) {
       console.log("✅ Embedding generated for:", text);
-      return res.data.embedding;
+      return embedding;
     } else {
       console.warn("⚠️ Invalid embedding format:", res.data);
-      
       return null;
     }
   } catch (err) {

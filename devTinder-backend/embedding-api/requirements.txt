@@ -1,5 +1,4 @@
-flask
-flask-cors
+gradio
 sentence-transformers
 torch
 transformers
