@@ -2,7 +2,11 @@ const axios = require("axios");
 
 async function getEmbedding(text) {
   try {
-    const res = await axios.post("http://127.0.0.1:5005/embed", { text });
+    const res = await axios.post(
+      "https://embedding-api-smart-feed.onrender.com/embed",
+      { text }
+    );
+
 
     // Debug log full response
     console.log("🧠 Embedding API response:", res.data);

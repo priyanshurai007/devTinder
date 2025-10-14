@@ -12,7 +12,7 @@ const Feed = () => {
   const getFeed = async () => {
     
     try {
-      const res = await axios.get(BASE_URL + "/user/feed", {
+      const res = await axios.get(BASE_URL + "/user/smart-feed", {
         withCredentials: true,
       });
       dispatch(addFeed(res.data)); // Assuming res.data is the array
