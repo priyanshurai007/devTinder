@@ -1,4 +1,0 @@
-gradio
-sentence-transformers
-torch
-transformers
