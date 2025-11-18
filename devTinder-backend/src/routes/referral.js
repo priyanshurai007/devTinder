@@ -71,8 +71,22 @@ referralRouter.post("/referral/review/:requestId/:action", userAuth, async (req,
   if (!allowed.includes(action)) return res.status(400).json({ message: "Invalid action" });
 
     const referral = await ReferralRequest.findById(requestId);
-    if (!referral || referral.toUserId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+    // Debug: log who is trying to review and who the referral is addressed to
+    try {
+      console.debug(`referralReview: requestId=${requestId} authUser=${req.user?._id?.toString()} referralTo=${referral?.toUserId?.toString()}`);
+    } catch (e) {}
+
+    if (!referral) {
+      return res.status(404).json({ message: "Referral not found" });
+    }
+
+    // Normalize IDs; referral.toUserId may be an ObjectId or populated doc
+    const referralToId = referral.toUserId && referral.toUserId._id ? referral.toUserId._id.toString() : (referral.toUserId ? referral.toUserId.toString() : null);
+    const authId = req.user && req.user._id ? req.user._id.toString() : null;
+
+    if (!authId || referralToId !== authId) {
+      console.debug(`referralReview: forbidden - authId=${authId} referralToId=${referralToId}`);
+      return res.status(403).json({ message: "Not authorized - only the referral recipient can accept/reject" });
     }
 
     referral.status = action;
