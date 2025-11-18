@@ -16,8 +16,19 @@ const MyReferrals = () => {
     setError("");
     try {
       const res = await axios.get(`${BASE_URL}/referral/my-requests`, { withCredentials: true });
-      setSent(res.data?.sent || []);
-      setReceived(res.data?.received || []);
+      // enforce one-directional visibility: only keep referrals where the
+      // current user is actually the sender (for sent) or the receiver (for received)
+      const myId = String(currentUser._id || "");
+      let sentList = res.data?.sent || [];
+      let receivedList = res.data?.received || [];
+
+      const normalizeId = (val) => (val && val._id ? String(val._id) : String(val || ""));
+
+      sentList = (sentList || []).filter((it) => normalizeId(it.fromUserId) === myId);
+      receivedList = (receivedList || []).filter((it) => normalizeId(it.toUserId) === myId);
+
+      setSent(sentList);
+      setReceived(receivedList);
     } catch (err) {
       console.error("Failed to fetch referrals:", err);
       setError("Failed to load referrals. Please try again.");
@@ -33,19 +44,43 @@ const MyReferrals = () => {
 
     // subscribe to real-time referral events
     const createdHandler = ({ referral }) => {
-      // if current user is the receiver, add to received (avoid duplicates)
-      if (referral.toUserId && referral.toUserId._id && String(referral.toUserId._id) === String(currentUser._id)) {
+      const normalizeId = (val) => (val && val._id ? String(val._id) : String(val || ""));
+      const toId = normalizeId(referral.toUserId);
+      const fromId = normalizeId(referral.fromUserId);
+      const myId = String(currentUser._id || "");
+
+      // If current user is the receiver, add to received
+      if (toId === myId) {
         setReceived((r) => {
-          const exists = (r || []).some((it) => it._id === referral._id);
+          const exists = (r || []).some((it) => String(it._id) === String(referral._id));
           return exists ? r : [referral, ...(r || [])];
+        });
+      }
+
+      // If current user is the sender, add to sent
+      if (fromId === myId) {
+        setSent((s) => {
+          const exists = (s || []).some((it) => String(it._id) === String(referral._id));
+          return exists ? s : [referral, ...(s || [])];
         });
       }
     };
 
     const updatedHandler = ({ referral }) => {
-      // update sent and received lists if present
-      setSent((s) => (s || []).map((it) => (it._id === referral._id ? referral : it)));
-      setReceived((r) => (r || []).map((it) => (it._id === referral._id ? referral : it)));
+      const normalizeId = (val) => (val && val._id ? String(val._id) : String(val || ""));
+      const toId = normalizeId(referral.toUserId);
+      const fromId = normalizeId(referral.fromUserId);
+      const myId = String(currentUser._id || "");
+
+      // update sent if we're the sender
+      if (fromId === myId) {
+        setSent((s) => (s || []).map((it) => (String(it._id) === String(referral._id) ? referral : it)));
+      }
+
+      // update received if we're the receiver
+      if (toId === myId) {
+        setReceived((r) => (r || []).map((it) => (String(it._id) === String(referral._id) ? referral : it)));
+      }
     };
 
     try {
@@ -104,7 +139,7 @@ const MyReferrals = () => {
             <div key={r._id} className="p-4 mb-2 border rounded bg-base-200">
               <p>From: {r.fromUserId?.firstName ?? 'Unknown'} {r.fromUserId?.lastName ? ` ${r.fromUserId.lastName}` : ''} | <b>{r.company}</b> - {r.role}</p>
               <p>Status: <span className="font-bold">{r.status}</span></p>
-              {r.status === "pending" && (
+              {r.status === "pending" && String(currentUser._id) === String(r.toUserId?._id || r.toUserId) && (
                 <div className="flex gap-2 mt-2">
                   <button
                     className="btn btn-sm btn-success"
