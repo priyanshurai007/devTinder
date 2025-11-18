@@ -9,8 +9,8 @@ const userSchema = new mongoose.Schema(
     firstName: {
       type: String,
       required: true,
-      minLength: 3,
-      maxLenght: 50,
+      minlength: 3,
+      maxlength: 50,
     },
     lastName: {
       type: String,
@@ -60,13 +60,22 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "https://img.freepik.com/free-vector/user-blue-gradient_78370-4692.jpg?t=st=1740779693~exp=1740783293~hmac=3ffc11733917c931bddeec957e8fa649e6a1590282b3210d816ccbf54dab2e94&w=900",
       validate(value) {
-        if (!validator.isURL(value)) {
+        // Allow empty string or valid URL
+        if (value && !validator.isURL(value)) {
           throw new Error("Invalid URL :" + value);
         }
       },
     },
     skills: {
       type: [String],
+    },
+    // Precomputed embedding vector for smart-feed / similarity
+    embedding: {
+      type: [Number],
+      default: undefined,
+    },
+    embeddingUpdatedAt: {
+      type: Date,
     },
   },
   {

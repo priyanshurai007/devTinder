@@ -23,8 +23,12 @@ const upload = multer({
 // View Profile
 // ------------------------------
 profileRouter.get("/profile/view", userAuth, async (req, res) => {
-  const user = req.user;
-  res.send(user);
+  try {
+    const user = req.user;
+    res.status(200).json({ user });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 });
 
 // ------------------------------
@@ -33,19 +37,19 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
 profileRouter.post("/profile/edit", userAuth, async (req, res) => {
   try {
     if (!validateEditFields(req)) {
-      throw new Error("Invalid Edit request");
+      return res.status(400).json({ message: "Invalid edit request" });
     }
 
     const loggedInUser = req.user;
     Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]));
     await loggedInUser.save();
 
-    res.json({
+    res.status(200).json({
       message: `${loggedInUser.firstName}, your profile updated successfully`,
       data: loggedInUser,
     });
   } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
+    res.status(400).json({ message: err.message });
   }
 });
 
@@ -65,7 +69,7 @@ profileRouter.post("/profile/photo", userAuth, upload.single("photo"), async (re
         req.user.photoURL = result.secure_url;
         await req.user.save();
 
-        res.json({ photoURL: result.secure_url, user: req.user });
+        res.status(200).json({ photoURL: result.secure_url, user: req.user });
       }
     );
 

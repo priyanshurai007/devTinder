@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "server": "nodemon app.js"
+    "server": "nodemon app.js",
+    "smoke-tests": "node scripts/smoke_search.js && node scripts/smoke_chatbot.js",
+    "generate-embeddings": "node scripts/generate_embeddings.js"
   },
   "author": "Priyanshu Rai",
   "license": "ISC",
@@ -18,6 +20,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
     "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.2",

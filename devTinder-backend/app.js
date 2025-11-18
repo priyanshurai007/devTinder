@@ -6,6 +6,18 @@ const cors = require("cors");
 dotenv.config();
 const http = require("http");
 const { Server } = require("socket.io");
+let helmet;
+let rateLimit;
+try {
+  helmet = require('helmet');
+} catch (e) {
+  console.warn('Optional dependency "helmet" not installed. Skipping security headers.');
+}
+try {
+  rateLimit = require('express-rate-limit');
+} catch (e) {
+  console.warn('Optional dependency "express-rate-limit" not installed. Skipping rate limiting.');
+}
 
 const app = express();
 
@@ -40,6 +52,36 @@ app.use(
   })
 );
 
+// Basic security headers (optional)
+if (helmet) {
+  app.use(helmet());
+} else {
+  // no-op if helmet missing
+}
+
+// Rate limiting (optional)
+if (rateLimit) {
+  // Global basic rate limiter (protect against abuse)
+  const globalLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 300, // max requests per IP per window
+  });
+  app.use(globalLimiter);
+
+  // Tighter rate limit for auth endpoints (login/signup)
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // limit each IP to 10 requests per window
+    message: { message: "Too many requests, please try again later" },
+  });
+
+  // Apply authLimiter to auth endpoints before mounting the router
+  app.use('/signup', authLimiter);
+  app.use('/login', authLimiter);
+} else {
+  // rate limiting not available
+}
+
 // Parse JSON + cookies
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
@@ -52,6 +94,8 @@ const userRouter = require("./src/routes/user");
 const uploadRouter = require("./src/routes/upload"); // <-- NEW
 const chatRouter = require("./src/routes/chat"); // <-- New
 const referralRouter = require("./src/routes/referral");
+const searchRouter = require("./src/routes/search"); // <-- NEW SEARCH
+const chatbotRouter = require("./src/routes/chatbot"); // <-- NEW CHATBOT
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
@@ -60,6 +104,8 @@ app.use("/", userRouter);
 app.use("/", uploadRouter); // <-- NEW
 app.use("/", chatRouter);// <-- New
 app.use("/", referralRouter); //<-- New
+app.use("/search", searchRouter); // <-- NEW SEARCH
+// app.use("/", chatbotRouter); // <-- NEW CHATBOT
 
 
 // Health check (nice for Render)
@@ -80,46 +126,81 @@ connectDB().then(() => {
     },
   });
 
-  // auth handshake? if needed parse cookie token & verify
-  io.use((socket, next) => {
-    // TODO: parse socket.handshake.headers.cookie -> token -> verify -> socket.userId
-    next(); // minimal now
+  // Socket auth handshake: verify JWT from cookie and attach socket.userId
+  const jwt = require('jsonwebtoken');
+  const User = require('./src/Models/user');
+  io.use(async (socket, next) => {
+    try {
+      const cookieHeader = socket.handshake.headers?.cookie || '';
+      const match = cookieHeader.match(/token=([^;]+)/);
+      const token = match ? match[1] : null;
+      if (!token) return next(new Error('Authentication error'));
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded._id).select('_id');
+      if (!user) return next(new Error('Authentication error'));
+      socket.userId = user._id.toString();
+      return next();
+    } catch (err) {
+      return next(new Error('Authentication error'));
+    }
   });
 
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
+    // socket connected
+
+    // join personal room (allows server -> user notifications)
+    try {
+      socket.join(`user_${socket.userId}`);
+    } catch (e) {}
 
     // join chat room
     socket.on("joinRoom", (roomId) => {
       socket.join(roomId);
     });
 
-    // message event
-    socket.on("sendMessage", async ({ roomId, senderId, message }) => {
+    // message event: accept optional tempId for optimistic updates
+    socket.on("sendMessage", async ({ roomId, senderId, message, tempId }) => {
       if (!message?.trim()) return;
 
-      // save in DB
-      const Message = require("./src/Models/message");
-      const newMsg = await Message.create({
-        chatRoomId: roomId,
-        senderId,
-        message,
-      });
+      try {
+        // validate that socket.userId matches senderId
+        if (socket.userId !== (senderId || '').toString()) return;
 
-      // broadcast to room
-      io.to(roomId).emit("receiveMessage", {
-        _id: newMsg._id,
-        chatRoomId: roomId,
-        senderId,
-        message,
-        createdAt: newMsg.createdAt,
-      });
+        const ChatRoom = require('./src/Models/chatRoom');
+        const Message = require('./src/Models/message');
+
+        const room = await ChatRoom.findById(roomId);
+        if (!room) return;
+
+        // ensure sender is a member
+        const memberIds = room.members.map(m => m.toString());
+        if (!memberIds.includes(socket.userId)) return;
+
+        const newMsg = await Message.create({ chatRoomId: roomId, senderId, message });
+        // populate sender fields for client display
+        await newMsg.populate('senderId', 'firstName lastName photoURL');
+
+        // send ack to sender with saved message (so client can replace optimistic message)
+        socket.emit('messageSaved', { tempId, message: newMsg });
+
+        // broadcast to other clients in the room
+        socket.to(roomId).emit('receiveMessage', newMsg);
+      } catch (e) {
+        // ignore silently
+      }
     });
 
     socket.on("disconnect", () => {
-      console.log("Socket disconnected:", socket.id);
+      // socket disconnected
     });
   });
 
+  // expose io on global so route handlers can notify users (simple but effective)
+  global.io = io;
+
   server.listen(port, () => console.log(`Server running on ${port}`));
+});
+// Note: server exit on unhandled rejections will help surface DB/connect issues during dev
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });

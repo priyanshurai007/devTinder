@@ -17,10 +17,11 @@ const userAuth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
+    // Avoid leaking internal error details. Return 401 for any auth failure.
+    return res.status(401).json({ message: "Authentication required" });
   }
 };
 
-module.exports = {
-  userAuth,
-};
+module.exports = userAuth;
+// Backwards-compatible named export for files using destructuring: { userAuth }
+module.exports.userAuth = userAuth;

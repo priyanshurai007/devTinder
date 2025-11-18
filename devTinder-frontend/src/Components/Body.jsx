@@ -1,7 +1,8 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import axios from "axios";
+// Chatbot feature removed — component import intentionally omitted
+import axios from "../utils/axiosInstance";
 import { BASE_URL } from "../utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../utils/userSlice";
@@ -40,13 +41,6 @@ const Body = () => {
   return (
     <div>
       <Navbar />
-      <nav>
-        {user && (
-          <a href="/chat" className="ml-4">
-            Chat
-          </a>
-        )}
-      </nav>
       <div className="pt-20">
         <Outlet />
       </div>
