@@ -116,11 +116,27 @@ const MyReferrals = () => {
     setProcessingId(id);
     setError("");
     try {
+      // ensure current user is still the recipient locally before sending request
+      const findLocal = (received || []).find((it) => String(it._id) === String(id));
+      const normalizeId = (val) => (val && val._id ? String(val._id) : String(val || ""));
+      const recipientId = findLocal ? normalizeId(findLocal.toUserId) : null;
+      const myId = String(currentUser._id || "");
+      if (!recipientId || recipientId !== myId) {
+        setError("You are not authorized to review this referral (not the recipient)");
+        setProcessingId(null);
+        return;
+      }
+
       await axios.post(`${BASE_URL}/referral/review/${id}/${action}`, {}, { withCredentials: true });
       await fetchReferrals();
     } catch (err) {
       console.error("Failed to review referral:", err);
-      setError("Unable to update referral. Try again.");
+      const respMsg = err?.response?.data?.message;
+      if (err?.response?.status === 403) {
+        setError(respMsg || "Forbidden: you cannot review this referral");
+      } else {
+        setError(respMsg || "Unable to update referral. Try again.");
+      }
     } finally {
       setProcessingId(null);
     }
