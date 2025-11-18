@@ -3,6 +3,7 @@ import axios from "../utils/axiosInstance";
 import { BASE_URL } from "../utils/constants";
 import { socket } from "../utils/socket";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const MyReferrals = () => {
   const [sent, setSent] = useState([]);
@@ -38,6 +39,21 @@ const MyReferrals = () => {
   };
 
   const currentUser = useSelector((store) => store.user) || {};
+  const navigate = useNavigate();
+
+  const getPersonId = (person) => {
+    if (!person) return null;
+    return person._id ? String(person._id) : String(person);
+  };
+
+  const getPersonDisplayName = (person) => {
+    if (!person) return "Unknown";
+    if (typeof person === "string") return `User ${person.slice(0, 6)}`;
+    const first = person.firstName || "";
+    const last = person.lastName || "";
+    const name = `${first} ${last}`.trim();
+    return name || (person.email ? person.email : "Unknown");
+  };
 
   useEffect(() => {
     fetchReferrals();
@@ -124,7 +140,10 @@ const MyReferrals = () => {
           {sent.length === 0 && <p className="text-sm text-muted">You haven't sent any referrals yet.</p>}
           {sent.map((r) => (
             <div key={r._id} className="p-4 mb-2 border rounded bg-base-200">
-              <p>To: {r.toUserId?.firstName ?? 'Unknown'} {r.toUserId?.lastName ? ` ${r.toUserId.lastName}` : ''} | <b>{r.company}</b> - {r.role}</p>
+              <p>
+                To: <button className="link" onClick={() => navigate(`/profile/${getPersonId(r.toUserId)}`)}>{getPersonDisplayName(r.toUserId)}</button>
+                {" "}| <b>{r.company}</b> - {r.role}
+              </p>
               <p>Status: <span className="font-bold">{r.status}</span></p>
               {r.message && <p className="text-sm italic">"{r.message}"</p>}
             </div>
@@ -137,7 +156,10 @@ const MyReferrals = () => {
           {received.length === 0 && <p className="text-sm text-muted">No referral requests received.</p>}
           {received.map((r) => (
             <div key={r._id} className="p-4 mb-2 border rounded bg-base-200">
-              <p>From: {r.fromUserId?.firstName ?? 'Unknown'} {r.fromUserId?.lastName ? ` ${r.fromUserId.lastName}` : ''} | <b>{r.company}</b> - {r.role}</p>
+              <p>
+                From: <button className="link" onClick={() => navigate(`/profile/${getPersonId(r.fromUserId)}`)}>{getPersonDisplayName(r.fromUserId)}</button>
+                {" "}| <b>{r.company}</b> - {r.role}
+              </p>
               <p>Status: <span className="font-bold">{r.status}</span></p>
               {r.status === "pending" && String(currentUser._id) === String(r.toUserId?._id || r.toUserId) && (
                 <div className="flex gap-2 mt-2">
