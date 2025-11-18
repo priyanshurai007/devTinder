@@ -194,6 +194,12 @@ userRouter.get("/user/smart-feed", userAuth, async (req, res) => {
             if (toId && toId !== loggedInUser._id.toString()) otherIdsSet.add(toId);
           } catch (e) {
             // ignore conversion issues per-row
+            // Pagination support: read page/limit early so downstream code can use skip
+            const page = parseInt(req.query.page || 1, 10);
+            let limit = parseInt(req.query.limit || 10, 10);
+            limit = Math.min(limit, 50);
+            const skip = (page - 1) * limit;
+
           }
         }
 
@@ -226,7 +232,7 @@ userRouter.get("/user/smart-feed", userAuth, async (req, res) => {
     const excludedArray = Array.from(excludedIds).map((id) => {
       try {
         if (!id) return null;
-        if (id instanceof mongoose.Types.ObjectId) return id;
+              const pagedByIds = await User.find({ _id: { $in: pagedIds } }).select(USER_SAFE_DATA);
         if (typeof id === 'object' && id._id) {
           return id._id instanceof mongoose.Types.ObjectId ? id._id : new mongoose.Types.ObjectId(id._id);
         }
