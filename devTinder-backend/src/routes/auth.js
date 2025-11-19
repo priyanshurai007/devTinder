@@ -128,4 +128,28 @@ authRouter.post("/logout", async (req, res) => {
   res.status(200).json({ message: "User logged out successfully" });
 });
 
+// Temporary debug endpoints (safe: do NOT expose secrets)
+// Use these to inspect how the server detects production and what headers arrive
+authRouter.get('/debug/env', (req, res) => {
+  const isHttps = req.get('x-forwarded-proto') === 'https' || process.env.NODE_ENV === 'production';
+  const isProd = isHttps || process.env.RENDER === 'true' || process.env.VERCEL === '1';
+  res.json({
+    isHttps,
+    isProd,
+    NODE_ENV: process.env.NODE_ENV || null,
+    RENDER: process.env.RENDER || null,
+    x_forwarded_proto: req.get('x-forwarded-proto') || null,
+    host: req.get('host') || null,
+  });
+});
+
+// Return incoming request headers so you can confirm whether cookies or proto headers arrive
+authRouter.get('/debug/headers', (req, res) => {
+  // echo request headers (non-sensitive) for debugging
+  const headers = { ...req.headers };
+  // mask common sensitive headers just in case
+  if (headers.authorization) headers.authorization = '[REDACTED]';
+  res.json({ headers });
+});
+
 module.exports = authRouter;
