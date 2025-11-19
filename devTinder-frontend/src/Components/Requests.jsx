@@ -184,7 +184,6 @@ const Requests = () => {
                 {isReceived ? (
                   (request.status && (request.status === "pending" || request.status === "intrested")) ? (
                     <>
-                    <>
                       <button className={`btn btn-sm btn-ghost flex-1 ${isProcessing && actionType === "declined" ? "btn-disabled" : ""}`} onClick={() => reviewRequest("declined", request._id)} disabled={isProcessing}>
                         {isProcessing && actionType === "declined" ? <span className="loading loading-spinner loading-xs"></span> : "Decline"}
                       </button>
