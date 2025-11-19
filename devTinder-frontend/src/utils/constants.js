@@ -15,8 +15,8 @@ if (isProdMode && !viteApiUrl) {
   );
 }
 
-export const BASE_URL = viteApiUrl || (isLocalhost ? "http://localhost:3000" : "https://devtinder-vqbx.onrender.com");
+export const BASE_URL = viteApiUrl || (isLocalhost ? "http://localhost:3000" : "https://devtinder-backend-rbiv.onrender.com");
 
 // Example .env for frontend (Vite):
-// VITE_API_URL=https://devtinder-vqbx.onrender.com
+// VITE_API_URL=https://devtinder-backend-rbiv.onrender.com
 
