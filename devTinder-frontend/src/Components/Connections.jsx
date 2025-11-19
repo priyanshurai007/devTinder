@@ -8,6 +8,7 @@ import ReferralModal from "./ReferralModal";
 
 const Connections = () => {
   const connections = useSelector((store) => store.connection);
+  const currentUser = useSelector((store) => store.user) || {};
   const dispatch = useDispatch();
 
   const [selectedUser, setSelectedUser] = useState(null);
@@ -33,13 +34,20 @@ const Connections = () => {
       const items = response.data.data || [];
       const pagesFromApi = response.data.pages || 1;
 
-      if (page === 1) {
-        // fresh load
-        dispatch(addConnection(items));
-      } else {
-        // append to existing
-        dispatch(addConnection([...(connections || []), ...items]));
+      // Merge and dedupe by _id; also defensively filter out logged-in user
+      const myId = String(currentUser._id || "");
+      const combined = page === 1 ? items : [...(connections || []), ...items];
+      const map = new Map();
+      for (const it of combined) {
+        if (!it) continue;
+        const id = String(it._id || it.id || "");
+        if (!id) continue;
+        // skip self
+        if (myId && id === myId) continue;
+        if (!map.has(id)) map.set(id, it);
       }
+      const merged = Array.from(map.values());
+      dispatch(addConnection(merged));
 
       setTotalPages(pagesFromApi);
     } catch (error) {

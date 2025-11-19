@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "../utils/axiosInstance";
 import { BASE_URL } from "../utils/constants";
-import { socket } from "../utils/socket";
+import { socket, connectSocket } from "../utils/socket";
 import { useSelector } from "react-redux";
 
 const ChatWindow = ({ room: propRoom, selectedUser, onClose }) => {
@@ -78,8 +78,28 @@ const ChatWindow = ({ room: propRoom, selectedUser, onClose }) => {
   useEffect(() => {
     if (!room?._id) return;
 
-    socket.emit("joinRoom", room._id);
+    // Ensure socket is connected before joining so the server receives the join
+    try {
+      connectSocket();
+    } catch (e) {}
 
+    const doJoin = () => {
+      try {
+        socket.emit("joinRoom", room._id);
+      } catch (e) {}
+    };
+
+    if (socket.connected) {
+      doJoin();
+    } else {
+      const onConnect = () => {
+        doJoin();
+        socket.off('connect', onConnect);
+      };
+      socket.on('connect', onConnect);
+    }
+
+    // handler for incoming messages
     const handler = (msg) => {
       // Normalize chatRoom id from message for safe comparison
       const idFromMsgRaw = msg?.chatRoomId || msg?.roomId || msg?.room;
@@ -111,12 +131,28 @@ const ChatWindow = ({ room: propRoom, selectedUser, onClose }) => {
         return [...prev, savedMessage];
       });
     };
-
     socket.on("receiveMessage", handler);
     socket.on('messageSaved', savedHandler);
+
+    // joined ack for debugging (server emits when join succeeds)
+    const joinedHandler = (joinedRoomId) => {
+      if (String(joinedRoomId) === String(room._id)) {
+        console.log(`joinedRoom confirmed for ${room._id}`);
+      }
+    };
+    socket.on('joinedRoom', joinedHandler);
+
+    // debug connection events
+    const onConnectErr = (err) => console.warn('socket connect_error', err);
+    const onDisconnect = (reason) => console.log('socket disconnected', reason);
+    socket.on('connect_error', onConnectErr);
+    socket.on('disconnect', onDisconnect);
     return () => {
       socket.off("receiveMessage", handler);
       socket.off('messageSaved', savedHandler);
+      socket.off('joinedRoom', joinedHandler);
+      socket.off('connect_error', onConnectErr);
+      socket.off('disconnect', onDisconnect);
       try {
         socket.emit("leaveRoom", room._id);
       } catch (e) {}

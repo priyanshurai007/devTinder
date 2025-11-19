@@ -1,8 +1,10 @@
 import { io } from "socket.io-client";
 import { BASE_URL } from "./constants";
 
-// Use same origin as API
-export const socket = io(BASE_URL, {
+// Connect socket to the frontend origin (dev server) so cookies are sent
+// during the handshake. The Vite dev server proxies `/socket.io` to the
+// backend (see `vite.config.js`) in development.
+export const socket = io(window.location.origin, {
   withCredentials: true,
   autoConnect: false, // connect manually after login
 });

@@ -72,9 +72,7 @@ referralRouter.post("/referral/review/:requestId/:action", userAuth, async (req,
 
     const referral = await ReferralRequest.findById(requestId);
     // Debug: log who is trying to review and who the referral is addressed to
-    try {
-      console.debug(`referralReview: requestId=${requestId} authUser=${req.user?._id?.toString()} referralTo=${referral?.toUserId?.toString()}`);
-    } catch (e) {}
+    // (debug logs removed)
 
     if (!referral) {
       return res.status(404).json({ message: "Referral not found" });
@@ -85,7 +83,6 @@ referralRouter.post("/referral/review/:requestId/:action", userAuth, async (req,
     const authId = req.user && req.user._id ? req.user._id.toString() : null;
 
     if (!authId || referralToId !== authId) {
-      console.debug(`referralReview: forbidden - authId=${authId} referralToId=${referralToId}`);
       return res.status(403).json({ message: "Not authorized - only the referral recipient can accept/reject" });
     }
 

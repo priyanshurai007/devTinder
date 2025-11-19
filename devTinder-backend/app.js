@@ -146,16 +146,22 @@ connectDB().then(() => {
   });
 
   io.on("connection", (socket) => {
-    // socket connected
+    console.log(`socket connected: ${socket.id} user:${socket.userId}`);
 
     // join personal room (allows server -> user notifications)
     try {
       socket.join(`user_${socket.userId}`);
     } catch (e) {}
 
-    // join chat room
+    // join chat room - reply with an ack event so clients can confirm join
     socket.on("joinRoom", (roomId) => {
-      socket.join(roomId);
+      try {
+        socket.join(roomId);
+        socket.emit('joinedRoom', roomId);
+        console.log(`socket ${socket.id} joined room ${roomId}`);
+      } catch (e) {
+        console.warn('joinRoom error', e && e.message);
+      }
     });
 
     // message event: accept optional tempId for optimistic updates
@@ -163,18 +169,28 @@ connectDB().then(() => {
       if (!message?.trim()) return;
 
       try {
+        console.log(`sendMessage from socket ${socket.id} user:${socket.userId} room:${roomId}`);
         // validate that socket.userId matches senderId
-        if (socket.userId !== (senderId || '').toString()) return;
+        if (socket.userId !== (senderId || '').toString()) {
+          console.warn('sendMessage: senderId mismatch', { socketUser: socket.userId, senderId });
+          return;
+        }
 
         const ChatRoom = require('./src/Models/chatRoom');
         const Message = require('./src/Models/message');
 
         const room = await ChatRoom.findById(roomId);
-        if (!room) return;
+        if (!room) {
+          console.warn('sendMessage: room not found', roomId);
+          return;
+        }
 
         // ensure sender is a member
         const memberIds = room.members.map(m => m.toString());
-        if (!memberIds.includes(socket.userId)) return;
+        if (!memberIds.includes(socket.userId)) {
+          console.warn('sendMessage: sender not a member', { socketUser: socket.userId, members: memberIds });
+          return;
+        }
 
         const newMsg = await Message.create({ chatRoomId: roomId, senderId, message });
         // populate sender fields for client display
@@ -185,13 +201,14 @@ connectDB().then(() => {
 
         // broadcast to other clients in the room
         socket.to(roomId).emit('receiveMessage', newMsg);
+        console.log(`message broadcast from ${socket.id} to room ${roomId}`);
       } catch (e) {
-        // ignore silently
+        console.warn('sendMessage error', e && e.message);
       }
     });
 
-    socket.on("disconnect", () => {
-      // socket disconnected
+    socket.on("disconnect", (reason) => {
+      console.log(`socket disconnected: ${socket.id} reason:${reason}`);
     });
   });
 

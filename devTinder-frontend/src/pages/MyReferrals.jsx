@@ -127,6 +127,21 @@ const MyReferrals = () => {
         return;
       }
 
+      // Server-verified auth: confirm server sees this user via profile/view
+      try {
+        const profileResp = await axios.get(`${BASE_URL}/profile/view`, { withCredentials: true });
+        const serverUserId = profileResp?.data?.user?._id;
+        if (!serverUserId || String(serverUserId) !== myId) {
+          setError("Authentication mismatch: please login again");
+          setProcessingId(null);
+          return;
+        }
+      } catch (e) {
+        setError("Authentication failed: please login again");
+        setProcessingId(null);
+        return;
+      }
+
       await axios.post(`${BASE_URL}/referral/review/${id}/${action}`, {}, { withCredentials: true });
       await fetchReferrals();
     } catch (err) {

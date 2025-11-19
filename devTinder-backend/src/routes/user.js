@@ -84,36 +84,48 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         { fromUserId: loggedInUser._id, status: "accepted" },
       ],
     }).populate("fromUserId toUserId", USER_SAFE_DATA);
-
-    const data = connectionRequests.map((row) => {
-      if (row.fromUserId._id.toString() == loggedInUser._id.toString()) {
-        return row.toUserId;
+      // Build a list of "other" user ids for each accepted connection (the user who is NOT the logged-in user).
+      const otherIds = [];
+      const myIdStr = String(loggedInUser._id);
+      for (const row of connectionRequests) {
+        try {
+          const fromId = row.fromUserId && (row.fromUserId._id ? String(row.fromUserId._id) : String(row.fromUserId));
+          const toId = row.toUserId && (row.toUserId._id ? String(row.toUserId._id) : String(row.toUserId));
+          if (fromId === myIdStr && toId) otherIds.push(toId);
+          else if (toId === myIdStr && fromId) otherIds.push(fromId);
+        } catch (e) {
+          // ignore malformed rows
+        }
       }
-      return row.fromUserId;
-    });
 
-    // Deduplicate connections by user id in case multiple accepted records exist
-    const uniqueMap = new Map();
-    data.forEach((u) => {
-      try {
-        const id = u && (u._id ? u._id.toString() : u.toString());
-        if (id && !uniqueMap.has(id)) uniqueMap.set(id, u);
-      } catch (e) {
-        // ignore malformed entries
-      }
-    });
+      // Deduplicate ids and paginate the id list (so we can fetch real user docs)
+      let uniqueIds = Array.from(new Set(otherIds));
+      // Defensive: remove any occurrence of the logged-in user's id (avoid returning self)
+      uniqueIds = uniqueIds.filter((id) => id && id !== myIdStr);
+      const total = uniqueIds.length;
+      const pagedIds = uniqueIds.slice(skip, skip + limit);
 
-    const uniqueArray = Array.from(uniqueMap.values());
-    const total = uniqueArray.length;
-    const paged = uniqueArray.slice(skip, skip + limit);
+      // Fetch the User documents for the paged ids (preserve safe fields).
+      const usersFound = await User.find({ _id: { $in: pagedIds } }).select(USER_SAFE_DATA);
 
-    res.status(200).json({
-      data: paged,
-      total,
-      page,
-      limit,
-      pages: Math.ceil(total / limit),
-    });
+      // Map users by id for stable ordering and defensive filtering
+      const userById = new Map(usersFound.map((u) => [String(u._id), u]));
+
+      const orderedUsers = pagedIds
+        .map((id) => {
+          const sid = String(id);
+          if (sid === myIdStr) return null; // never return self
+          return userById.get(sid) || null;
+        })
+        .filter(Boolean);
+
+      res.status(200).json({
+        data: orderedUsers,
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      });
   } catch (error) {
     res.status(400).send("ERROR :" + error.message);
   }
@@ -180,130 +192,97 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
 userRouter.get("/user/smart-feed", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
-    // Use stored embedding if available, otherwise compute and store it (best-effort)
-    let myVector = Array.isArray(loggedInUser.embedding) ? loggedInUser.embedding : null;
-    if (!myVector) {
-      const skills = Array.isArray(loggedInUser.skills) ? loggedInUser.skills.join(" ") : "";
-        // Build a unique list of the other participant (the connected user)
-        const otherIdsSet = new Set();
-        for (const row of connectionRequests) {
-          try {
-            const fromId = row.fromUserId && row.fromUserId._id ? row.fromUserId._id.toString() : (row.fromUserId && row.fromUserId.toString && row.fromUserId.toString());
-            const toId = row.toUserId && row.toUserId._id ? row.toUserId._id.toString() : (row.toUserId && row.toUserId.toString && row.toUserId.toString());
-            if (fromId && fromId !== loggedInUser._id.toString()) otherIdsSet.add(fromId);
-            if (toId && toId !== loggedInUser._id.toString()) otherIdsSet.add(toId);
-          } catch (e) {
-            // ignore conversion issues per-row
-            // Pagination support: read page/limit early so downstream code can use skip
-            const page = parseInt(req.query.page || 1, 10);
-            let limit = parseInt(req.query.limit || 10, 10);
-            limit = Math.min(limit, 50);
-            const skip = (page - 1) * limit;
 
-          }
-        }
+    // Pagination
+    const page = parseInt(req.query.page || 1, 10);
+    let limit = parseInt(req.query.limit || 10, 10);
+    limit = Math.min(limit, 50);
+    const skip = (page - 1) * limit;
 
-        const otherIds = Array.from(otherIdsSet).map((id) => {
-          try {
-            return mongoose.Types.ObjectId(id);
-          } catch (e) {
-            return null;
-          }
-        }).filter(Boolean);
-
-        // Query the User collection for those unique ids and paginate results
-        const total = otherIds.length;
-        const pagedIds = otherIds.slice(skip, skip + limit);
-        const paged = await User.find({ _id: { $in: pagedIds } }).select(USER_SAFE_DATA);
+    // Get accepted connection requests for the logged-in user
     const requests = await ConnectionRequestModel.find({
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
       status: "accepted",
     });
 
-    const excludedIds = new Set([loggedInUser._id.toString()]);
-    requests.forEach((r) => {
-      const fromId = r.fromUserId && r.fromUserId.toString();
-      const toId = r.toUserId && r.toUserId.toString();
-      if (fromId && fromId !== loggedInUser._id.toString()) excludedIds.add(fromId);
-      if (toId && toId !== loggedInUser._id.toString()) excludedIds.add(toId);
-    });
-
-    // convert to ObjectId array for reliable $nin comparisons (handle strings/ObjectIds)
-    const excludedArray = Array.from(excludedIds).map((id) => {
+    // Build exclusion set (self + connected users)
+    const excludedIds = new Set([String(loggedInUser._id)]);
+    for (const r of requests) {
       try {
-        if (!id) return null;
-              const pagedByIds = await User.find({ _id: { $in: pagedIds } }).select(USER_SAFE_DATA);
-        if (typeof id === 'object' && id._id) {
-          return id._id instanceof mongoose.Types.ObjectId ? id._id : new mongoose.Types.ObjectId(id._id);
-        }
-        if (typeof id === 'string') return new mongoose.Types.ObjectId(id);
-        return null;
+        const fromId = r.fromUserId && r.fromUserId.toString && r.fromUserId.toString();
+        const toId = r.toUserId && r.toUserId.toString && r.toUserId.toString();
+        if (fromId && fromId !== String(loggedInUser._id)) excludedIds.add(fromId);
+        if (toId && toId !== String(loggedInUser._id)) excludedIds.add(toId);
       } catch (e) {
-        return null;
+        // ignore
       }
-    }).filter(Boolean);
+    }
 
-    // Fast path: compute similarity only for users who already have embeddings stored
+    // Convert exclusion list to ObjectId array for Mongo queries
+    const excludedArray = Array.from(excludedIds)
+      .map((id) => {
+        try {
+          return mongoose.Types.ObjectId(id);
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    // Determine user's embedding (if missing, attempt best-effort compute)
+    let myVector = Array.isArray(loggedInUser.embedding) ? loggedInUser.embedding : null;
+    if (!myVector) {
+      try {
+        const skillsText = Array.isArray(loggedInUser.skills) ? loggedInUser.skills.join(" ") : "";
+        const input = `${skillsText} ${loggedInUser.about || ""}`.trim();
+        if (input) myVector = await getEmbedding(input);
+      } catch (e) {
+        // best-effort: proceed without embedding
+        myVector = null;
+      }
+    }
+
+    // Find users with embeddings (excluding connected users)
     const otherUsersWithEmbeddings = await User.find({
       _id: { $nin: excludedArray },
       embedding: { $exists: true, $ne: [] },
     }).select("firstName lastName about skills photoURL embedding");
 
+    // Compute similarity if we have a vector
     const results = [];
-    for (const user of otherUsersWithEmbeddings) {
-      try {
-        const otherVector = user.embedding;
-        if (!otherVector || !Array.isArray(otherVector)) continue;
-        if (!Array.isArray(myVector) || myVector.length === 0) {
-          console.error('Smart-feed: invalid myVector for user', loggedInUser._id);
-          continue;
+    if (Array.isArray(myVector) && myVector.length > 0) {
+      for (const user of otherUsersWithEmbeddings) {
+        try {
+          const otherVector = user.embedding;
+          if (!otherVector || !Array.isArray(otherVector)) continue;
+          if (otherVector.length !== myVector.length) continue;
+          const similarity = cosineSimilarity(myVector, otherVector);
+          if (Number.isFinite(similarity)) results.push({ user, similarity });
+        } catch (e) {
+          // skip user
         }
-        // ensure vectors are compatible length-wise; if not, skip
-        if (otherVector.length !== myVector.length) {
-          // optionally, skip or compute using min length
-          console.warn('Smart-feed: embedding length mismatch, skipping user', user._id);
-          continue;
-        }
-        const similarity = cosineSimilarity(myVector, otherVector);
-        if (Number.isFinite(similarity)) results.push({ user, similarity });
-      } catch (e) {
-        console.error('Smart-feed: similarity computation error for user', user._id, e.message);
-        // skip this user on error
-        continue;
       }
     }
 
     results.sort((a, b) => b.similarity - a.similarity);
     let topUsers = results.map((r) => r.user);
 
-    // If not enough results, fall back to returning recent users (without computing embeddings)
+    // Fallback to recent users if not enough similarity-based results
     if (topUsers.length < 10) {
-      const fallback = await User.find({
-        _id: { $nin: excludedArray },
-      })
+      const fallback = await User.find({ _id: { $nin: excludedArray } })
         .select("firstName lastName about skills photoURL")
         .sort({ createdAt: -1 })
         .limit(50);
-      // append fallback users not already in topUsers
-      const seen = new Set(topUsers.map((u) => u._id.toString()));
-      for (const u of fallback) {
-        if (!seen.has(u._id.toString())) topUsers.push(u);
-      }
+      const seen = new Set(topUsers.map((u) => String(u._id)));
+      for (const u of fallback) if (!seen.has(String(u._id))) topUsers.push(u);
     }
 
-    // Pagination support for smart feed
-    const page = parseInt(req.query.page || 1, 10);
-    let limit = parseInt(req.query.limit || 10, 10);
-    limit = Math.min(limit, 50);
-    const skip = (page - 1) * limit;
-
+    const total = topUsers.length;
     const paged = topUsers.slice(skip, skip + limit);
-
-    res.json({ data: paged, total: topUsers.length, page, limit, pages: Math.ceil(topUsers.length / limit) });
-    
+    return res.json({ data: paged, total, page, limit, pages: Math.ceil(total / limit) });
   } catch (err) {
-    console.error("🔥 Smart feed error:", err.message, err.stack);
-    res.status(500).send("Server error");
+    console.error("🔥 Smart feed error:", err && err.message ? err.message : err);
+    return res.status(500).send("Server error");
   }
 });
 
