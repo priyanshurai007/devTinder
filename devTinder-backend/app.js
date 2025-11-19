@@ -24,12 +24,21 @@ const app = express();
 
 /*
   Allow both local dev and deployed frontend.
-  If you want to restrict strictly in prod, set FRONTEND_URL in .env and use that only.
+  To customize, set `FRONTEND_URL` in your environment. You can supply
+  a single origin or a comma-separated list of origins.
 */
-const allowedOrigins = [
+const defaultOrigins = [
   "http://localhost:5173",
   "https://devtinder-vqbx.onrender.com",
-].filter(Boolean); // avoid undefineds
+];
+
+// Allow an env var FRONTEND_URL (single or comma-separated) to extend/override origins
+const envFrontends = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...defaultOrigins, ...envFrontends].filter(Boolean);
 
 app.use(
   cors({
@@ -118,10 +127,7 @@ connectDB().then(() => {
 
   const io = new Server(server, {
     cors: {
-      origin: [
-        "http://localhost:5173",
-        "https://devtinder-vqbx.onrender.com",
-      ],
+      origin: allowedOrigins,
       credentials: true,
     },
   });
