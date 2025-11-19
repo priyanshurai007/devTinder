@@ -1,10 +1,11 @@
 import { io } from "socket.io-client";
 import { BASE_URL } from "./constants";
 
-// Connect socket to the frontend origin (dev server) so cookies are sent
-// during the handshake. The Vite dev server proxies `/socket.io` to the
-// backend (see `vite.config.js`) in development.
-export const socket = io(window.location.origin, {
+// In development Vite proxies `/socket.io` to the backend so connecting to
+// `window.location.origin` works. In production the backend often lives on a
+// different host — use `BASE_URL` (set via `VITE_API_URL`) so the socket
+// handshake targets the actual API host and not the frontend host.
+export const socket = io(BASE_URL, {
   withCredentials: true,
   autoConnect: false, // connect manually after login
 });

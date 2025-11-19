@@ -97,12 +97,11 @@ const Connections = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="p-8 text-center rounded-lg shadow-lg bg-base-200">
-          <h1 className="mb-3 text-4xl">🤝</h1>
           <h2 className="mb-2 text-2xl font-bold text-gray-300">
             No Connections Yet
           </h2>
           <p className="mb-6 text-gray-400">
-            Accept connection requests to build your network and start chatting!
+            Accept connection requests to build your network and start messaging.
           </p>
           <a href="/requests" className="btn btn-primary">
             View Requests
@@ -117,10 +116,10 @@ const Connections = () => {
   return (
     <div className="my-10">
       <div className="mb-8 text-center">
-        <h1 className="mb-2 text-4xl font-bold text-pink-400">
-          💗 Your Connections
+        <h1 className="mb-2 text-4xl font-bold text-white">
+          Your Connections
         </h1>
-        <p className="text-gray-400">({connections.length} connected)</p>
+        <p className="text-gray-400">{connections.length} connection{connections.length !== 1 ? 's' : ''}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 px-4 mx-auto md:grid-cols-2 lg:grid-cols-3 max-w-7xl">
@@ -163,16 +162,16 @@ const Connections = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedUser(connection)}
-                  className="flex-1 btn btn-success btn-sm"
+                  className="flex-1 btn btn-primary btn-sm"
                 >
-                  💬 Chat
+                  Message
                 </button>
                 <button
                   onClick={() => setReferralUser(connection)}
-                  className="flex-1 btn btn-info btn-sm"
+                  className="flex-1 btn btn-outline btn-sm"
                   title="Ask for job referral"
                 >
-                  🔗 Refer
+                  Request Referral
                 </button>
               </div>
             </div>

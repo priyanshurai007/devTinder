@@ -21,6 +21,9 @@ try {
 
 const app = express();
 
+// Trust proxy - required when behind Render/Vercel/Nginx reverse proxy
+// This allows express-rate-limit to correctly identify users via X-Forwarded-For
+app.set('trust proxy', 1);
 
 /*
   Allow both local dev and deployed frontend.
@@ -164,9 +167,21 @@ connectDB().then(() => {
       try {
         socket.join(roomId);
         socket.emit('joinedRoom', roomId);
-        console.log(`socket ${socket.id} joined room ${roomId}`);
+        const roomSockets = io.sockets.adapter.rooms.get(roomId);
+        const count = roomSockets ? roomSockets.size : 0;
+        console.log(`socket ${socket.id} (user:${socket.userId}) joined room ${roomId} - now ${count} user(s) in room`);
       } catch (e) {
         console.warn('joinRoom error', e && e.message);
+      }
+    });
+
+    // leave chat room
+    socket.on("leaveRoom", (roomId) => {
+      try {
+        socket.leave(roomId);
+        console.log(`socket ${socket.id} (user:${socket.userId}) left room ${roomId}`);
+      } catch (e) {
+        console.warn('leaveRoom error', e && e.message);
       }
     });
 
@@ -205,9 +220,9 @@ connectDB().then(() => {
         // send ack to sender with saved message (so client can replace optimistic message)
         socket.emit('messageSaved', { tempId, message: newMsg });
 
-        // broadcast to other clients in the room
-        socket.to(roomId).emit('receiveMessage', newMsg);
-        console.log(`message broadcast from ${socket.id} to room ${roomId}`);
+        // broadcast to ALL users in the room (including sender for consistency)
+        io.to(roomId).emit('receiveMessage', newMsg);
+        console.log(`message broadcast from ${socket.id} to room ${roomId} (all users)`);
       } catch (e) {
         console.warn('sendMessage error', e && e.message);
       }

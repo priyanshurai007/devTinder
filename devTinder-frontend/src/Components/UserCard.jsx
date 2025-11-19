@@ -114,7 +114,7 @@ const UserCard = ({ user }) => {
             ) : (
               <>
                 <button
-                  className={`btn btn-sm ${actionType === "ignored" ? "btn-neutral" : "btn-outline btn-accent"}`}
+                  className={`btn btn-sm ${actionType === "ignored" ? "btn-disabled" : "btn-ghost border border-gray-600 hover:border-gray-500"}`}
                   onClick={() => handleSendRequest("ignored", _id)}
                   disabled={requesting}
                   title="Skip this user"
@@ -124,12 +124,12 @@ const UserCard = ({ user }) => {
                       <span className="loading loading-spinner loading-xs"></span>
                     </>
                   ) : (
-                    "👎 Pass"
+                    "Pass"
                   )}
                 </button>
 
                 <button
-                  className={`ml-2 btn btn-sm ${actionType === "intrested" ? "btn-neutral" : "btn-primary"}`}
+                  className={`ml-2 btn btn-sm ${actionType === "intrested" ? "btn-disabled" : "btn-primary"}`}
                   onClick={() => handleSendRequest("intrested", _id)}
                   disabled={requesting}
                   title="Show interest in connecting"
@@ -139,14 +139,14 @@ const UserCard = ({ user }) => {
                       <span className="loading loading-spinner loading-xs"></span>
                     </>
                   ) : (
-                    "❤️ Interested"
+                    "Connect"
                   )}
                 </button>
 
                 {/* Show referral button only if users are connected (accepted) */}
                 {!isSelf && relationship && relationship.status === 'accepted' && (
                   <button
-                    className={`ml-2 btn btn-sm ${actionType === "referral" ? "btn-neutral" : "btn-success"}`}
+                    className={`ml-2 btn btn-sm ${actionType === "referral" ? "btn-disabled" : "btn-success"}`}
                     onClick={() => setShowReferralModal(true)}
                     disabled={requesting}
                     title="Request a referral from this user"
@@ -156,7 +156,7 @@ const UserCard = ({ user }) => {
                         <span className="loading loading-spinner loading-xs"></span>
                       </>
                     ) : (
-                      "🔗 Refer"
+                      "Request Referral"
                     )}
                   </button>
                 )}

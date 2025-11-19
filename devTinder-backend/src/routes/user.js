@@ -140,10 +140,9 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
     limit = limit > 50 ? 50 : limit;
     const skip = (page - 1) * limit;
 
-    // Exclude self and already accepted connections
+    // Exclude self and users with ANY connection request (sent or received, any status)
     const connectionRequest = await ConnectionRequestModel.find({
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
-      status: "accepted",
     }).select("fromUserId toUserId status");
 
     const hideUsersFromFeed = new Set();
@@ -199,13 +198,12 @@ userRouter.get("/user/smart-feed", userAuth, async (req, res) => {
     limit = Math.min(limit, 50);
     const skip = (page - 1) * limit;
 
-    // Get accepted connection requests for the logged-in user
+    // Get ALL connection requests for the logged-in user (any status)
     const requests = await ConnectionRequestModel.find({
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
-      status: "accepted",
     });
 
-    // Build exclusion set (self + connected users)
+    // Build exclusion set (self + all users with any connection request)
     const excludedIds = new Set([String(loggedInUser._id)]);
     for (const r of requests) {
       try {

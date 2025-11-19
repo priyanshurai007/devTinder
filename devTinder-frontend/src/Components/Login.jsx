@@ -1,6 +1,6 @@
 import axios from "../utils/axiosInstance";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../utils/userSlice";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
@@ -18,9 +18,40 @@ const Login = () => {
   const [skills, setSkills] = useState("");
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const user = useSelector((store) => store.user);
+
+  // Check if user is already logged in on mount
+  useEffect(() => {
+    let mounted = true;
+    const checkAuth = async () => {
+      // If user already in Redux store, redirect to feed
+      if (user && user._id) {
+        navigate("/");
+        return;
+      }
+
+      // Try to fetch user from backend (check if cookie is valid)
+      try {
+        const res = await axios.get(BASE_URL + "/profile/view", { withCredentials: true });
+        if (mounted && res.data) {
+          const userData = res.data.user || res.data;
+          dispatch(addUser(userData));
+          try { socket.connect(); } catch (e) {}
+          navigate("/");
+        }
+      } catch (err) {
+        // Not authenticated - stay on login page
+        if (mounted) setLoading(false);
+      }
+    };
+
+    checkAuth();
+    return () => { mounted = false; };
+  }, [user, navigate, dispatch]);
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validatePassword = (pwd) =>
@@ -101,6 +132,15 @@ const Login = () => {
       setError(error.response?.data || "Signup failed");
     }
   };
+
+  // Show nothing while checking authentication
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center my-10">

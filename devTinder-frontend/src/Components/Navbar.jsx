@@ -41,70 +41,67 @@ const Navbar = () => {
   }
 
   return (
-    <div className="fixed top-0 left-0 z-50 w-full text-white shadow-lg bg-neutral">
+    <div className="fixed top-0 left-0 z-50 w-full text-white shadow-md bg-gray-900 border-b border-gray-800">
       <div className="flex justify-between items-center px-4 py-3 navbar md:px-6">
-        {/* Logo - Animated with gradient and hover effects */}
+        {/* Logo - Clean professional look */}
         <Link
           to="/"
-          className="relative group text-xl md:text-2xl font-bold"
+          className="relative group text-xl md:text-2xl font-bold tracking-tight"
           title="Go to Feed"
         >
-          <span className="bg-gradient-to-r from-green-300 via-blue-300 to-green-300 bg-clip-text text-transparent animate-pulse">
-            DevLinker
+          <span className="text-white hover:text-blue-400 transition-colors duration-200">
+            DevTinder
           </span>
-          <span className="ml-2 inline-block text-2xl group-hover:animate-bounce transition-transform">
-            🧑‍💻
-          </span>
-          {/* Animated underline on hover */}
-          <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-green-400 to-blue-400 group-hover:w-full transition-all duration-300 rounded-full"></div>
+          {/* Subtle underline on hover */}
+          <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 group-hover:w-full transition-all duration-300"></div>
         </Link>
 
         {user && (
           <>
             {/* Desktop Navigation Links */}
-            <div className="hidden md:flex gap-2 lg:gap-4">
+            <div className="hidden md:flex gap-1 lg:gap-2">
               <Link
                 to="/"
-                className="px-3 py-2 text-sm lg:text-base rounded-lg hover:bg-gray-700 transition font-medium hover:text-green-300"
+                className="px-4 py-2 text-sm lg:text-base rounded-md hover:bg-gray-800 transition-all font-medium text-gray-300 hover:text-white border border-transparent hover:border-gray-700"
                 title="Browse profiles and send requests"
               >
-                🔥 Feed
+                Feed
               </Link>
               <Link
                 to="/search"
-                className="px-3 py-2 text-sm lg:text-base rounded-lg hover:bg-gray-700 transition font-medium hover:text-cyan-300"
+                className="px-4 py-2 text-sm lg:text-base rounded-md hover:bg-gray-800 transition-all font-medium text-gray-300 hover:text-white border border-transparent hover:border-gray-700"
                 title="Search users by name or skills"
               >
-                🔍 Search
+                Search
               </Link>
               <Link
                 to="/requests"
-                className="px-3 py-2 text-sm lg:text-base rounded-lg hover:bg-gray-700 transition font-medium hover:text-yellow-300"
+                className="px-4 py-2 text-sm lg:text-base rounded-md hover:bg-gray-800 transition-all font-medium text-gray-300 hover:text-white border border-transparent hover:border-gray-700"
                 title="View connection requests"
               >
-                👁️ Requests
+                Requests
               </Link>
               <Link
                 to="/connections"
-                className="px-3 py-2 text-sm lg:text-base rounded-lg hover:bg-gray-700 transition font-medium hover:text-pink-300"
+                className="px-4 py-2 text-sm lg:text-base rounded-md hover:bg-gray-800 transition-all font-medium text-gray-300 hover:text-white border border-transparent hover:border-gray-700"
                 title="View your connections"
               >
-                💗 Connections
+                Connections
               </Link>
               <Link
                 to="/referrals"
-                className="px-3 py-2 text-sm lg:text-base rounded-lg hover:bg-gray-700 transition font-medium hover:text-blue-300"
+                className="px-4 py-2 text-sm lg:text-base rounded-md hover:bg-gray-800 transition-all font-medium text-gray-300 hover:text-white border border-transparent hover:border-gray-700"
                 title="View referral requests"
               >
-                🔗 Referrals
+                Referrals
               </Link>
             </div>
 
             {/* Right Section: User Info + Dropdown */}
             <div className="flex items-center gap-3 md:gap-4">
               {/* Welcome (Hidden on small screens) */}
-              <div className="hidden sm:block px-3 py-2 text-sm font-semibold text-green-400 bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl whitespace-nowrap">
-                👋 {user.firstName}
+              <div className="hidden sm:block px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 whitespace-nowrap">
+                Welcome, {user.firstName}
               </div>
 
               {/* Dropdown Menu */}

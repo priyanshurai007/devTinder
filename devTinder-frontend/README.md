@@ -62,5 +62,5 @@ This project is open-source and available under the MIT License.
 Contributions are welcome! Feel free to fork the repo and submit a pull request.
 
 
-<!-- rebuild-trigger: no-op commit to force CI/deploy -->
+<!-- rebuild-trigger: force frontend rebuild with correct VITE_API_URL -->
 

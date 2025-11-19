@@ -1,24 +1,14 @@
 const Footer = () => {
   return (
-    <footer className="p-4 footer footer-center bg-base-200 text-neutral-content ">
+    <footer className="p-6 footer footer-center bg-gray-900 text-gray-400 border-t border-gray-800">
       <aside>
-        <svg
-          width="50"
-          height="50"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-          fillRule="evenodd"
-          clipRule="evenodd"
-          className="inline-block fill-current"
-        >
-          <path d="M12 2c-3.5 5.5-7 8-7 12 0 3.866 3.134 7 7 7s7-3.134 7-7c0-4-3.5-6.5-7-12zm0 17c-2.209 0-4-1.791-4-4 0-1.389.707-2.651 1.793-3.454.648.857 1.813 1.454 3.207 1.454 1.564 0 2.743-1.245 2.993-2.654.642 1.029 1.007 2.264 1.007 3.654 0 2.209-1.791 4-4 4z" />
-        </svg>
-        <p className="font-bold">
+        <p className="font-semibold text-lg text-white mb-2">
           DevTinder
-          <br />
-          Connecting Developers and Collaborate 
         </p>
-        <p>Copyright © {new Date().getFullYear()} - All right reserved</p>
+        <p className="text-sm">
+          Connect with developers and collaborate on projects
+        </p>
+        <p className="text-xs mt-2">© {new Date().getFullYear()} DevTinder. All rights reserved.</p>
       </aside>
       <nav>
         <div className="grid grid-flow-col gap-4">

@@ -141,7 +141,6 @@ const Requests = () => {
             <button className={`btn ${tab === 'received' ? 'btn-primary' : 'btn-ghost'} mr-2`} onClick={() => setTab('received')}>Received</button>
             <button className={`btn ${tab === 'sent' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('sent')}>Sent</button>
           </div>
-          <h1 className="mb-3 text-4xl">📭</h1>
           <h2 className="mb-2 text-2xl font-bold text-gray-300">No {tab === 'received' ? 'Incoming' : 'Sent'} Requests</h2>
           <p className="mb-6 text-gray-400">{tab === 'received' ? "Requests sent to you will appear here." : "Requests you sent will appear here."}</p>
           <div className="flex justify-center gap-2">
@@ -155,7 +154,7 @@ const Requests = () => {
   return (
     <div className="my-10">
       <div className="mb-8 text-center">
-        <h1 className="mb-2 text-4xl font-bold text-pink-400">💌 Connection Requests</h1>
+        <h1 className="mb-2 text-4xl font-bold text-white">Connection Requests</h1>
         <div className="mt-2">
           <button className={`btn ${tab === 'received' ? 'btn-primary' : 'btn-ghost'} mr-2`} onClick={() => setTab('received')}>Received ({requests.length})</button>
           <button className={`btn ${tab === 'sent' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('sent')}>Sent ({sentRequests.length})</button>
@@ -185,11 +184,12 @@ const Requests = () => {
                 {isReceived ? (
                   (request.status && (request.status === "pending" || request.status === "intrested")) ? (
                     <>
-                      <button className={`btn btn-sm btn-error flex-1 ${isProcessing && actionType === "declined" ? "btn-disabled" : ""}`} onClick={() => reviewRequest("declined", request._id)} disabled={isProcessing}>
-                        {isProcessing && actionType === "declined" ? <span className="loading loading-spinner loading-xs"></span> : "👎 Decline"}
+                    <>
+                      <button className={`btn btn-sm btn-ghost flex-1 ${isProcessing && actionType === "declined" ? "btn-disabled" : ""}`} onClick={() => reviewRequest("declined", request._id)} disabled={isProcessing}>
+                        {isProcessing && actionType === "declined" ? <span className="loading loading-spinner loading-xs"></span> : "Decline"}
                       </button>
-                      <button className={`btn btn-sm btn-success flex-1 ${isProcessing && actionType === "accepted" ? "btn-disabled" : ""}`} onClick={() => reviewRequest("accepted", request._id)} disabled={isProcessing}>
-                        {isProcessing && actionType === "accepted" ? <span className="loading loading-spinner loading-xs"></span> : "❤️ Accept"}
+                      <button className={`btn btn-sm btn-primary flex-1 ${isProcessing && actionType === "accepted" ? "btn-disabled" : ""}`} onClick={() => reviewRequest("accepted", request._id)} disabled={isProcessing}>
+                        {isProcessing && actionType === "accepted" ? <span className="loading loading-spinner loading-xs"></span> : "Accept"}
                       </button>
                     </>
                   ) : (
