@@ -17,13 +17,6 @@ if (isProdMode && !viteApiUrl) {
 
 export const BASE_URL = viteApiUrl || (isLocalhost ? "http://localhost:3000" : "https://devtinder-vqbx.onrender.com");
 
-// Helpful runtime debug: print the resolved API host so deployed builds
-// clearly show which backend they are targeting (visible in DevTools).
-if (typeof window !== 'undefined') {
-  // eslint-disable-next-line no-console
-  console.log('BASE_URL =', BASE_URL);
-}
-
 // Example .env for frontend (Vite):
 // VITE_API_URL=https://devtinder-vqbx.onrender.com
 
